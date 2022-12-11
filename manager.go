@@ -11,13 +11,14 @@ var timestampBase = 36
 
 type DataManager struct {
 	Path string
-	Root *DataNode
+	root *DataNode
 }
 
+// Creates instance of DataManager at given path, initializes instance with previous data located at path.
 func Manage(path string) (DataManager, error) {
 	var dm DataManager
 	dm.Path = path
-	dm.Root = nil
+	dm.root = nil
 	err := os.MkdirAll(dm.Path, 0750)
 	if err != nil {
 		if os.IsExist(err) {
@@ -52,19 +53,21 @@ func Manage(path string) (DataManager, error) {
 	return dm, nil
 }
 
+// Inserts latest data at current timestamp. See below.
 func (dm DataManager) InsertData(name string, data any) bool {
 	timestamp := time.Now().UnixNano()
 	return dm.InsertDataAt(name, data, timestamp)
 }
 
+// Inserts data into DataManager with given key and timestamp, additionally updates local files if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool {
 	var dv = DataVersion{data, nil, timestamp}
 	success := true
-	if dm.Root != nil {
-		success = dm.Root.InsertVersion(name, dv)
+	if dm.root != nil {
+		success = dm.root.InsertVersion(name, dv)
 	} else {
 		var dn = DataNode{true, nil, name, nil, &dv}
-		*(dm.Root) = dn
+		*(dm.root) = dn
 	}
 	if success {
 		dataBytes, err := json.Marshal(data)
@@ -79,16 +82,18 @@ func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool 
 	return success
 }
 
+// Looks for latest version with given key and writes to data if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) GetData(name string, data *any) bool {
-	if dm.Root == nil {
+	if dm.root == nil {
 		return false
 	}
-	return dm.Root.GetData(name, data)
+	return dm.root.GetData(name, data)
 }
 
+// Looks for version at given timestamp with given key and writes to data if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) GetDataAt(name string, data *any, timestamp int64) bool {
-	if dm.Root == nil {
+	if dm.root == nil {
 		return false
 	}
-	return dm.Root.GetDataAt(name, data, timestamp)
+	return dm.root.GetDataAt(name, data, timestamp)
 }
