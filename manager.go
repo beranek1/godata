@@ -11,14 +11,14 @@ var timestampBase = 36
 
 type DataManager struct {
 	Path string
-	root *DataNode
+	root DataNode
 }
 
 // Creates instance of DataManager at given path, initializes instance with previous data located at path.
 func Manage(path string) (DataManager, error) {
 	var dm DataManager
 	dm.Path = path
-	dm.root = nil
+	dm.root = CreateDataNode()
 	err := os.MkdirAll(dm.Path, 0750)
 	if err != nil {
 		if os.IsExist(err) {
@@ -61,39 +61,52 @@ func (dm DataManager) InsertData(name string, data any) bool {
 
 // Inserts data into DataManager with given key and timestamp, additionally updates local files if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool {
-	var dv = DataVersion{data, nil, timestamp}
-	success := true
-	if dm.root != nil {
-		success = dm.root.InsertVersion(name, dv)
-	} else {
-		var dn = DataNode{true, nil, name, nil, &dv}
-		*(dm.root) = dn
+	dm.root = dm.root.InsertDataAt(name, data, timestamp)
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return false
 	}
-	if success {
-		dataBytes, err := json.Marshal(data)
-		if err != nil {
-			return false
-		}
-		err = os.WriteFile(dm.Path+"/"+name+"/"+strconv.FormatInt(timestamp, timestampBase), dataBytes, 0664)
-		if err != nil {
-			return false
-		}
+	err = os.Mkdir(dm.Path+"/"+name, 0750)
+	if err != nil && !os.IsExist(err) {
+		return false
 	}
-	return success
+	err = os.WriteFile(dm.Path+"/"+name+"/"+strconv.FormatInt(timestamp, timestampBase), dataBytes, 0664)
+	return err == nil
 }
 
 // Looks for latest version with given key and writes to data if successful. Returns bool indicating whether operation was successful.
-func (dm DataManager) GetData(name string, data *any) bool {
-	if dm.root == nil {
-		return false
-	}
-	return dm.root.GetData(name, data)
+func (dm DataManager) GetData(name string) any {
+	return dm.root.GetData(name)
 }
 
 // Looks for version at given timestamp with given key and writes to data if successful. Returns bool indicating whether operation was successful.
-func (dm DataManager) GetDataAt(name string, data *any, timestamp int64) bool {
+func (dm DataManager) GetDataAt(name string, timestamp int64) any {
 	if dm.root == nil {
 		return false
 	}
-	return dm.root.GetDataAt(name, data, timestamp)
+	return dm.root.GetDataAt(name, timestamp)
+}
+
+// Remove all versions equal or older than the provided timestamp
+func (dm DataManager) DeleteVersionsAt(timestamp int64) {
+	if dm.root == nil {
+		return
+	}
+	nodes, err := os.ReadDir(dm.Path)
+	if err == nil {
+		for _, node := range nodes {
+			if node.IsDir() {
+				versions, err := os.ReadDir(dm.Path + "/" + node.Name())
+				if err == nil {
+					for _, version := range versions {
+						t, err := strconv.ParseInt(version.Name(), timestampBase, 64)
+						if err == nil && t <= timestamp {
+							os.Remove(dm.Path + "/" + node.Name() + "/" + version.Name())
+						}
+					}
+				}
+			}
+		}
+	}
+	dm.root = dm.root.DeleteVersionsAt(timestamp)
 }
