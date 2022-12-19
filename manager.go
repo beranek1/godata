@@ -11,14 +11,14 @@ var timestampBase = 36
 
 type DataManager struct {
 	Path string
-	root DataNode
+	tree DataTree
 }
 
 // Creates instance of DataManager at given path, initializes instance with previous data located at path.
 func Manage(path string) (DataManager, error) {
 	var dm DataManager
 	dm.Path = path
-	dm.root = CreateDataNode()
+	dm.tree = CreateDataTree()
 	err := os.MkdirAll(dm.Path, 0750)
 	if err != nil {
 		if os.IsExist(err) {
@@ -61,7 +61,7 @@ func (dm DataManager) InsertData(name string, data any) bool {
 
 // Inserts data into DataManager with given key and timestamp, additionally updates local files if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool {
-	dm.root = dm.root.InsertDataAt(name, data, timestamp)
+	dm.tree.InsertDataAt(name, data, timestamp)
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return false
@@ -76,22 +76,16 @@ func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool 
 
 // Looks for latest version with given key and writes to data if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) GetData(name string) any {
-	return dm.root.GetData(name)
+	return dm.tree.GetData(name)
 }
 
 // Looks for version at given timestamp with given key and writes to data if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) GetDataAt(name string, timestamp int64) any {
-	if dm.root == nil {
-		return false
-	}
-	return dm.root.GetDataAt(name, timestamp)
+	return dm.tree.GetDataAt(name, timestamp)
 }
 
 // Remove all versions equal or older than the provided timestamp
 func (dm DataManager) DeleteVersionsAt(timestamp int64) {
-	if dm.root == nil {
-		return
-	}
 	nodes, err := os.ReadDir(dm.Path)
 	if err == nil {
 		for _, node := range nodes {
@@ -108,5 +102,5 @@ func (dm DataManager) DeleteVersionsAt(timestamp int64) {
 			}
 		}
 	}
-	dm.root = dm.root.DeleteVersionsAt(timestamp)
+	dm.tree.DeleteVersionsAt(timestamp)
 }
