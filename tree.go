@@ -17,7 +17,7 @@ func CreateDataTree() *DataTreeRBT {
 
 func (dt *DataTreeRBT) InsertDataAt(name string, data any, timestamp int64) {
 	if dt.root == nil {
-		dt.root = CreateDataNode(name, data, timestamp, false, nil, nil, nil)
+		dt.root = CreateDataNode(name, data, timestamp, BLACK, nil, nil, nil)
 		return
 	}
 	node := dt.root.InsertDataAt(name, data, timestamp)
@@ -43,4 +43,11 @@ func (dt *DataTreeRBT) DeleteVersionsAt(timestamp int64) {
 		return
 	}
 	dt.root.DeleteVersionsAt(timestamp)
+}
+
+func (dt *DataTreeRBT) Height() uint {
+	if dt.root == nil {
+		return 0
+	}
+	return dt.root.Height()
 }

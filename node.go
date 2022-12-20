@@ -48,14 +48,14 @@ func (dn *DataNodeRBT) InsertDataAt(name string, data any, timestamp int64) *Dat
 	} else {
 		if dn.name > name {
 			if dn.Left == nil {
-				dn.Left = CreateDataNode(name, data, timestamp, true, dn, nil, nil)
+				dn.Left = CreateDataNode(name, data, timestamp, RED, dn, nil, nil)
 				return dn.Left
 			} else {
 				return dn.Left.InsertDataAt(name, data, timestamp)
 			}
 		} else {
 			if dn.Right == nil {
-				dn.Right = CreateDataNode(name, data, timestamp, true, dn, nil, nil)
+				dn.Right = CreateDataNode(name, data, timestamp, RED, dn, nil, nil)
 				return dn.Right
 			} else {
 				return dn.Right.InsertDataAt(name, data, timestamp)
@@ -131,84 +131,204 @@ func (dn *DataNodeRBT) Height() uint {
 	}
 }
 
+// Adapted from: https://en.wikipedia.org/wiki/Red%E2%80%93black_tree
+//
+// BALANCE Wikipedia
+//
+// func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
+// 	var parent = node.Parent
+// 	var gparent, tmp *DataNodeRBT
+// 	for parent != nil {
+// 		if parent.Color == BLACK {
+// 			return root
+// 		}
+// 		gparent = parent.Parent
+// 		if gparent == nil {
+// 			parent.Color = BLACK
+// 			return root
+// 		}
+
+// 		dir := LEFT
+// 		tmp = gparent.Right
+// 		if parent == tmp {
+// 			tmp = gparent.Left
+// 			dir = RIGHT
+// 		}
+// 		if tmp == nil || tmp.Color == BLACK {
+// 			if dir == LEFT && node == parent.Right {
+// 				rotate(root, parent, dir)
+// 				node = parent
+// 				parent = gparent.Left
+// 			} else if dir == RIGHT && node == parent.Left {
+// 				rotate(root, parent, dir)
+// 				node = parent
+// 				parent = gparent.Right
+// 			}
+// 			root = rotate(root, gparent, !dir)
+// 			parent.Color = BLACK
+// 			gparent.Color = RED
+// 			return root
+// 		}
+// 		parent.Color = BLACK
+// 		tmp.Color = BLACK
+// 		gparent.Color = RED
+// 		node = gparent
+// 	}
+// 	return root
+// }
+
+// func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir RBDir) *DataNodeRBT {
+// 	gparent := parent.Parent
+// 	var s, c *DataNodeRBT
+// 	if dir == LEFT {
+// 		s = parent.Right
+// 		if s != nil {
+// 			c = s.Left
+// 			parent.Right = c
+// 			if c != nil {
+// 				c.Parent = parent
+// 			}
+// 			s.Left = parent
+// 		}
+// 	} else {
+// 		s = parent.Left
+// 		if s != nil {
+// 			c = s.Right
+// 			parent.Left = c
+// 			if c != nil {
+// 				c.Parent = parent
+// 			}
+// 			s.Right = parent
+// 		}
+// 	}
+// 	if s != nil {
+// 		parent.Parent = s
+// 		s.Parent = gparent
+// 		if gparent != nil {
+// 			if parent == gparent.Right {
+// 				gparent.Right = s
+// 			} else {
+// 				gparent.Left = s
+// 			}
+// 		} else {
+// 			return s
+// 		}
+// 	}
+// 	return root
+// }
+
+// Adapted from: https://github.com/torvalds/linux/blob/master/lib/rbtree.c
+//
+// Balance Linux
 func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 	var parent = node.Parent
 	var gparent, tmp *DataNodeRBT
-	for parent != nil {
+	for {
+		if parent == nil {
+			node.Color = BLACK
+			return root
+		}
 		if parent.Color == BLACK {
 			return root
 		}
 		gparent = parent.Parent
 		if gparent == nil {
 			parent.Color = BLACK
-			return root
+			return parent
 		}
-
-		dir := LEFT
 		tmp = gparent.Right
-		if parent == tmp {
-			tmp = gparent.Left
-			dir = RIGHT
-		}
-		if tmp == nil || tmp.Color == BLACK {
-			if dir == LEFT && node == parent.Right {
-				rotate(root, parent, dir)
-				node = parent
-				parent = gparent.Left
-			} else if !dir && node == parent.Left {
-				rotate(root, parent, dir)
-				node = parent
-				parent = gparent.Right
+		if parent != tmp {
+			if tmp != nil && tmp.Color == RED {
+				rb_set_parent_color(tmp, gparent, BLACK)
+				rb_set_parent_color(parent, gparent, BLACK)
+				node = gparent
+				parent = node.Parent
+				rb_set_parent_color(node, parent, RED)
+				continue
 			}
-			root = rotate(root, gparent, !dir)
-			parent.Color = BLACK
-			gparent.Color = RED
-			return root
+
+			tmp = parent.Right
+			if node == tmp {
+				tmp = node.Left
+				parent.Right = tmp
+				node.Left = parent
+				if tmp != nil {
+					rb_set_parent_color(tmp, parent, BLACK)
+				}
+				rb_set_parent_color(parent, node, RED)
+				// augment_rotate(parent, node)
+				parent = node
+				tmp = node.Right
+			}
+
+			gparent.Left = tmp
+			parent.Right = gparent
+			if tmp != nil {
+				rb_set_parent_color(tmp, gparent, BLACK)
+			}
+			root = rb_rotate_set_parents(gparent, parent, root, RED)
+			// augment_rotate(gparent, parent)
+			break
+		} else {
+			tmp = gparent.Left
+			if tmp != nil && tmp.Color == RED {
+				rb_set_parent_color(tmp, gparent, BLACK)
+				rb_set_parent_color(parent, gparent, BLACK)
+				node = gparent
+				parent = node.Parent
+				rb_set_parent_color(node, parent, RED)
+				continue
+			}
+
+			tmp = parent.Left
+			if node == tmp {
+				tmp = node.Right
+				parent.Left = tmp
+				node.Right = parent
+				if tmp != nil {
+					rb_set_parent_color(tmp, parent, BLACK)
+				}
+				rb_set_parent_color(parent, node, RED)
+				// augment_rotate(parent, node)
+				parent = node
+				tmp = node.Left
+			}
+
+			gparent.Right = tmp
+			parent.Left = gparent
+			if tmp != nil {
+				rb_set_parent_color(tmp, gparent, BLACK)
+			}
+			root = rb_rotate_set_parents(gparent, parent, root, RED)
+			//augment_rotate(gparent, parent)
+			break
 		}
-		parent.Color = BLACK
-		tmp.Color = BLACK
-		gparent.Color = RED
-		node = gparent
 	}
 	return root
 }
 
-func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir RBDir) *DataNodeRBT {
-	gparent := parent.Parent
-	var s, c *DataNodeRBT
-	if dir == LEFT {
-		s = parent.Right
-		if s != nil {
-			c = s.Left
-			parent.Right = c
-			if c != nil {
-				c.Parent = parent
-			}
-			s.Left = parent
+func rb_set_parent_color(node *DataNodeRBT, parent *DataNodeRBT, color RBColor) {
+	node.Parent = parent
+	node.Color = color
+}
+
+func rb_change_child(old *DataNodeRBT, new *DataNodeRBT, parent *DataNodeRBT, root *DataNodeRBT) *DataNodeRBT {
+	if parent != nil {
+		if parent.Left == old {
+			parent.Left = new
+		} else {
+			parent.Right = new
 		}
 	} else {
-		s = parent.Left
-		if s != nil {
-			c = s.Right
-			parent.Left = c
-			if c != nil {
-				c.Parent = parent
-			}
-			s.Right = parent
-		}
-	}
-	if s != nil {
-		parent.Parent = s
-		s.Parent = gparent
-		if gparent != nil {
-			if parent == gparent.Right {
-				gparent.Right = s
-			} else {
-				gparent.Left = s
-			}
-		} else {
-			root = s
-		}
+		return new
 	}
 	return root
+}
+
+func rb_rotate_set_parents(old *DataNodeRBT, new *DataNodeRBT, root *DataNodeRBT, color RBColor) *DataNodeRBT {
+	parent := old.Parent
+	new.Parent = old.Parent
+	new.Color = old.Color
+	rb_set_parent_color(old, new, color)
+	return rb_change_child(old, new, parent, root)
 }

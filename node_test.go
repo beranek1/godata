@@ -113,7 +113,7 @@ func TestBalanceSeven(t *testing.T) {
 	checkNodeIgnoreColor(t, root.Right, 2, "f")
 }
 
-func TestInsertDataAt(t *testing.T) {
+func TestNodeInsertDataAt(t *testing.T) {
 	root := CreateDataNode("d", "root", 0, true, nil, nil, nil)
 	root.InsertDataAt("a", "left", 0)
 	checkNodeIgnoreColor(t, root, 2, "d")
@@ -150,7 +150,7 @@ func TestInsertDataAt(t *testing.T) {
 	checkNodeIgnoreColor(t, root.Right.Left.Left, 1, "e")
 }
 
-func TestGetData(t *testing.T) {
+func TestNodeGetData(t *testing.T) {
 	root := CreateDataNode("d", "root", 0, true, nil, nil, nil)
 	root.InsertDataAt("a", "left", 0)
 	root.InsertDataAt("g", "right", 0)
