@@ -20,7 +20,7 @@ func (dt *DataTreeRBT) InsertDataAt(name string, data any, timestamp int64) {
 		dt.root = CreateDataNode(name, data, timestamp, false, nil, nil, nil)
 		return
 	}
-	node := dt.root.RBTInsertDataAt(name, data, timestamp)
+	node := dt.root.InsertDataAt(name, data, timestamp)
 	dt.root = Balance(dt.root, node)
 }
 

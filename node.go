@@ -9,58 +9,49 @@ type DataNode interface {
 
 type DataRedBlackTree interface {
 	DataNode
-	RBTInsertDataAt(string, any, int64) DataRedBlackTree
-	RBTDeleteVersionsAt(int64)
 	GetName() string
-	GetLeft() DataRedBlackTree
-	GetRight() DataRedBlackTree
-	GetParent() DataRedBlackTree
-	SetLeft(DataRedBlackTree)
-	SetRight(DataRedBlackTree)
-	SetParent(DataRedBlackTree)
-	MakeRed()
-	MakeBlack()
-	IsRed() bool
-	IsBlack() bool
 	Height() uint
 }
 
+type RBColor bool
+
+const (
+	RED   RBColor = true
+	BLACK RBColor = false
+)
+
 type DataNodeRBT struct {
-	color   bool
-	left    *DataNodeRBT
+	Color   RBColor
+	Left    *DataNodeRBT
 	name    string
-	parent  *DataNodeRBT
-	right   *DataNodeRBT
+	Parent  *DataNodeRBT
+	Right   *DataNodeRBT
 	version DataVersion
 }
 
-func CreateDataNode(name string, data any, timestamp int64, color bool, parent *DataNodeRBT, left *DataNodeRBT, right *DataNodeRBT) *DataNodeRBT {
+func CreateDataNode(name string, data any, timestamp int64, color RBColor, parent *DataNodeRBT, left *DataNodeRBT, right *DataNodeRBT) *DataNodeRBT {
 	dv := CreateDataVersion().InsertDataAt(data, timestamp)
 	return &DataNodeRBT{color, left, name, parent, right, dv}
 }
 
-func (dn *DataNodeRBT) InsertDataAt(name string, data any, timestamp int64) DataNode {
-	return dn.RBTInsertDataAt(name, data, timestamp)
-}
-
-func (dn *DataNodeRBT) RBTInsertDataAt(name string, data any, timestamp int64) *DataNodeRBT {
+func (dn *DataNodeRBT) InsertDataAt(name string, data any, timestamp int64) *DataNodeRBT {
 	if dn.name == name {
 		dn.version = dn.version.InsertDataAt(data, timestamp)
 		return nil
 	} else {
 		if dn.name > name {
-			if dn.left == nil {
-				dn.left = CreateDataNode(name, data, timestamp, true, dn, nil, nil)
-				return dn.left
+			if dn.Left == nil {
+				dn.Left = CreateDataNode(name, data, timestamp, true, dn, nil, nil)
+				return dn.Left
 			} else {
-				return dn.left.RBTInsertDataAt(name, data, timestamp)
+				return dn.Left.InsertDataAt(name, data, timestamp)
 			}
 		} else {
-			if dn.right == nil {
-				dn.right = CreateDataNode(name, data, timestamp, true, dn, nil, nil)
-				return dn.right
+			if dn.Right == nil {
+				dn.Right = CreateDataNode(name, data, timestamp, true, dn, nil, nil)
+				return dn.Right
 			} else {
-				return dn.right.RBTInsertDataAt(name, data, timestamp)
+				return dn.Right.InsertDataAt(name, data, timestamp)
 			}
 		}
 	}
@@ -70,15 +61,15 @@ func (dn *DataNodeRBT) GetData(name string) any {
 	if dn.name == name {
 		return dn.version.GetData()
 	} else if dn.name > name {
-		if dn.left == nil {
+		if dn.Left == nil {
 			return nil
 		}
-		return dn.left.GetData(name)
+		return dn.Left.GetData(name)
 	} else {
-		if dn.right == nil {
+		if dn.Right == nil {
 			return nil
 		}
-		return dn.right.GetData(name)
+		return dn.Right.GetData(name)
 	}
 }
 
@@ -86,28 +77,24 @@ func (dn *DataNodeRBT) GetDataAt(name string, timestamp int64) any {
 	if dn.name == name {
 		return dn.version.GetDataAt(timestamp)
 	} else if dn.name > name {
-		if dn.left == nil {
+		if dn.Left == nil {
 			return nil
 		}
-		return dn.left.GetDataAt(name, timestamp)
+		return dn.Left.GetDataAt(name, timestamp)
 	} else {
-		if dn.right == nil {
+		if dn.Right == nil {
 			return nil
 		}
-		return dn.right.GetDataAt(name, timestamp)
+		return dn.Right.GetDataAt(name, timestamp)
 	}
 }
 
 func (dn *DataNodeRBT) DeleteVersionsAt(timestamp int64) {
-	dn.RBTDeleteVersionsAt(timestamp)
-}
-
-func (dn *DataNodeRBT) RBTDeleteVersionsAt(timestamp int64) {
-	if dn.left != nil {
-		dn.left.RBTDeleteVersionsAt(timestamp)
+	if dn.Left != nil {
+		dn.Left.DeleteVersionsAt(timestamp)
 	}
-	if dn.right != nil {
-		dn.right.RBTDeleteVersionsAt(timestamp)
+	if dn.Right != nil {
+		dn.Right.DeleteVersionsAt(timestamp)
 	}
 	dn.version = dn.version.DeleteVersionsAt(timestamp)
 }
@@ -116,51 +103,11 @@ func (dn *DataNodeRBT) GetName() string {
 	return dn.name
 }
 
-func (dn *DataNodeRBT) GetLeft() *DataNodeRBT {
-	return dn.left
-}
-
-func (dn *DataNodeRBT) GetRight() *DataNodeRBT {
-	return dn.right
-}
-
-func (dn *DataNodeRBT) GetParent() *DataNodeRBT {
-	return dn.parent
-}
-
-func (dn *DataNodeRBT) SetLeft(left *DataNodeRBT) {
-	dn.left = left
-}
-
-func (dn *DataNodeRBT) SetRight(right *DataNodeRBT) {
-	dn.right = right
-}
-
-func (dn *DataNodeRBT) SetParent(parent *DataNodeRBT) {
-	dn.parent = parent
-}
-
-func (dn *DataNodeRBT) MakeRed() {
-	dn.color = true
-}
-
-func (dn *DataNodeRBT) MakeBlack() {
-	dn.color = false
-}
-
-func (dn *DataNodeRBT) IsRed() bool {
-	return dn.color
-}
-
-func (dn *DataNodeRBT) IsBlack() bool {
-	return !dn.IsRed()
-}
-
 func (dn *DataNodeRBT) Height() uint {
-	if dn.left != nil {
-		hleft := dn.left.Height()
-		if dn.right != nil {
-			hright := dn.right.Height()
+	if dn.Left != nil {
+		hleft := dn.Left.Height()
+		if dn.Right != nil {
+			hright := dn.Right.Height()
 			if hleft > hright {
 				return 1 + hleft
 			} else {
@@ -169,8 +116,8 @@ func (dn *DataNodeRBT) Height() uint {
 		} else {
 			return 1 + hleft
 		}
-	} else if dn.right != nil {
-		hright := dn.right.Height()
+	} else if dn.Right != nil {
+		hright := dn.Right.Height()
 		return 1 + hright
 	} else {
 		return 1
@@ -178,79 +125,79 @@ func (dn *DataNodeRBT) Height() uint {
 }
 
 func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
-	var parent = node.GetParent()
+	var parent = node.Parent
 	var gparent, tmp *DataNodeRBT
 	for parent != nil {
-		if parent.IsBlack() {
+		if parent.Color == BLACK {
 			return root
 		}
-		gparent = parent.GetParent()
+		gparent = parent.Parent
 		if gparent == nil {
-			parent.MakeBlack()
+			parent.Color = BLACK
 			return root
 		}
 
 		dir := true
-		tmp = gparent.GetRight()
+		tmp = gparent.Right
 		if parent == tmp {
-			tmp = gparent.GetLeft()
+			tmp = gparent.Left
 			dir = false
 		}
-		if tmp == nil || tmp.IsBlack() {
-			if dir && node == parent.GetRight() {
+		if tmp == nil || tmp.Color == BLACK {
+			if dir && node == parent.Right {
 				rotate(root, parent, dir)
 				node = parent
-				parent = gparent.GetLeft()
-			} else if !dir && node == parent.GetLeft() {
+				parent = gparent.Left
+			} else if !dir && node == parent.Left {
 				rotate(root, parent, dir)
 				node = parent
-				parent = gparent.GetRight()
+				parent = gparent.Right
 			}
 			root = rotate(root, gparent, !dir)
-			parent.MakeBlack()
-			gparent.MakeRed()
+			parent.Color = BLACK
+			gparent.Color = RED
 			return root
 		}
-		parent.MakeBlack()
-		tmp.MakeBlack()
-		gparent.MakeRed()
+		parent.Color = BLACK
+		tmp.Color = BLACK
+		gparent.Color = RED
 		node = gparent
 	}
 	return root
 }
 
 func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir bool) *DataNodeRBT {
-	gparent := parent.GetParent()
+	gparent := parent.Parent
 	var s, c *DataNodeRBT
 	if dir {
-		s = parent.GetRight()
+		s = parent.Right
 		if s != nil {
-			c = s.GetLeft()
-			parent.SetRight(c)
+			c = s.Left
+			parent.Right = c
 			if c != nil {
-				c.SetParent(parent)
+				c.Parent = parent
 			}
-			s.SetLeft(parent)
+			s.Left = parent
 		}
 	} else {
-		s = parent.GetLeft()
+		s = parent.Left
 		if s != nil {
-			c = s.GetRight()
-			parent.SetLeft(c)
+			c = s.Right
+			parent.Left = c
 			if c != nil {
-				c.SetParent(parent)
+				c.Parent = parent
 			}
-			s.SetRight(parent)
+			s.Right = parent
 		}
 	}
 	if s != nil {
-		parent.SetParent(s)
-		s.SetParent(gparent)
+		parent.Parent = s
+		s.Parent = gparent
 		if gparent != nil {
-			if parent == gparent.GetRight() {
-				gparent.SetRight(s)
+			if parent == gparent.Right {
+				gparent.Right = s
 			} else {
-				gparent.SetLeft(s)
+				gparent.Left = s
 			}
 		} else {
 			root = s
