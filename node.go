@@ -180,11 +180,8 @@ func (dn *DataNodeRBT) Height() uint {
 func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 	var parent = node.GetParent()
 	var gparent, tmp *DataNodeRBT
-	for {
-		if parent == nil {
-			node.MakeBlack()
-			return node
-		} else if parent.IsBlack() {
+	for parent != nil {
+		if parent.IsBlack() {
 			return root
 		}
 		gparent = parent.GetParent()
@@ -192,107 +189,71 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 			parent.MakeBlack()
 			return root
 		}
+
+		dir := true
 		tmp = gparent.GetRight()
-		if parent != tmp {
-			if tmp != nil && tmp.IsRed() {
-				tmp.MakeBlack()
-				parent.MakeBlack()
-				node = gparent
-				parent = node.GetParent()
-				parent.MakeRed()
-				continue
-			}
-
-			tmp = parent.GetRight()
-			if node == tmp {
-				tmp = node.GetLeft()
-				parent.SetRight(tmp)
-				if tmp != nil {
-					tmp.MakeBlack()
-					tmp.SetParent(parent)
-				}
-				node.SetLeft(parent)
-				parent.SetParent(node)
-				node.SetParent(gparent)
-				gparent.SetLeft(node)
-				parent.MakeRed()
-				parent = node
-				tmp = node.GetRight()
-			}
-			gtmp := gparent.GetParent()
-			gparent.SetLeft(tmp)
-			if tmp != nil {
-				tmp.MakeBlack()
-				tmp.SetParent(gparent)
-			}
-			parent.SetRight(gparent)
-			gparent.SetParent(parent)
-			parent.SetParent(gtmp)
-			// if gtmp != nil {
-			// 	if gtmp.GetLeft() == gparent {
-			// 		gtmp.SetLeft(parent)
-			// 	} else {
-			// 		gtmp.SetRight(parent)
-			// 	}
-			// }
-			parent.MakeBlack()
-			gparent.MakeRed()
-			if gtmp == nil {
-				return parent
-			}
-			break
-		} else {
+		if parent == tmp {
 			tmp = gparent.GetLeft()
-			if tmp != nil && tmp.IsRed() {
-				tmp.MakeBlack()
-				parent.MakeBlack()
-				node = gparent
-				parent = node.GetParent()
-				parent.MakeRed()
-				continue
+			dir = false
+		}
+		if tmp == nil || tmp.IsBlack() {
+			if dir && node == parent.GetRight() {
+				rotate(root, parent, dir)
+				node = parent
+				parent = gparent.GetLeft()
+			} else if !dir && node == parent.GetLeft() {
+				rotate(root, parent, dir)
+				node = parent
+				parent = gparent.GetRight()
 			}
-
-			tmp = parent.GetLeft()
-			if node == tmp {
-				tmp = node.GetRight()
-				parent.SetLeft(tmp)
-				if tmp != nil {
-					tmp.MakeBlack()
-					tmp.SetParent(parent)
-				}
-				node.SetRight(parent)
-				parent.SetParent(node)
-				if parent == gparent.GetLeft() {
-					gparent.SetLeft(node)
-				}
-				node.SetParent(gparent)
-				gparent.SetRight(node)
-				parent.MakeRed()
-				parent = node
-				tmp = node.GetLeft()
-			}
-			gtmp := gparent.GetParent()
-			gparent.SetRight(tmp)
-			if tmp != nil {
-				tmp.MakeBlack()
-				tmp.SetParent(gparent)
-			}
-			parent.SetLeft(gparent)
-			gparent.SetParent(parent)
-			parent.SetParent(gtmp)
-			// if gtmp != nil {
-			// 	if gtmp.GetLeft() == gparent {
-			// 		gtmp.SetLeft(parent)
-			// 	} else {
-			// 		gtmp.SetRight(parent)
-			// 	}
-			// }
+			root = rotate(root, gparent, !dir)
 			parent.MakeBlack()
 			gparent.MakeRed()
-			if gtmp == nil {
-				return parent
+			return root
+		}
+		parent.MakeBlack()
+		tmp.MakeBlack()
+		gparent.MakeRed()
+		node = gparent
+	}
+	return root
+}
+
+func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir bool) *DataNodeRBT {
+	gparent := parent.GetParent()
+	var s, c *DataNodeRBT
+	if dir {
+		s = parent.GetRight()
+		if s != nil {
+			c = s.GetLeft()
+			parent.SetRight(c)
+			if c != nil {
+				c.SetParent(parent)
 			}
-			break
+			s.SetLeft(parent)
+		}
+	} else {
+		s = parent.GetLeft()
+		if s != nil {
+			c = s.GetRight()
+			parent.SetLeft(c)
+			if c != nil {
+				c.SetParent(parent)
+			}
+			s.SetRight(parent)
+		}
+	}
+	if s != nil {
+		parent.SetParent(s)
+		s.SetParent(gparent)
+		if gparent != nil {
+			if parent == gparent.GetRight() {
+				gparent.SetRight(s)
+			} else {
+				gparent.SetLeft(s)
+			}
+		} else {
+			root = s
 		}
 	}
 	return root
