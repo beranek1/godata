@@ -20,6 +20,13 @@ const (
 	BLACK RBColor = false
 )
 
+type RBDir bool
+
+const (
+	LEFT  RBDir = true
+	RIGHT RBDir = false
+)
+
 type DataNodeRBT struct {
 	Color   RBColor
 	Left    *DataNodeRBT
@@ -137,14 +144,14 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 			return root
 		}
 
-		dir := true
+		dir := LEFT
 		tmp = gparent.Right
 		if parent == tmp {
 			tmp = gparent.Left
-			dir = false
+			dir = RIGHT
 		}
 		if tmp == nil || tmp.Color == BLACK {
-			if dir && node == parent.Right {
+			if dir == LEFT && node == parent.Right {
 				rotate(root, parent, dir)
 				node = parent
 				parent = gparent.Left
@@ -166,10 +173,10 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 	return root
 }
 
-func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir bool) *DataNodeRBT {
+func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir RBDir) *DataNodeRBT {
 	gparent := parent.Parent
 	var s, c *DataNodeRBT
-	if dir {
+	if dir == LEFT {
 		s = parent.Right
 		if s != nil {
 			c = s.Left

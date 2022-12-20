@@ -112,3 +112,71 @@ func TestBalanceSeven(t *testing.T) {
 	checkNodeIgnoreColor(t, root.Left, 2, "b")
 	checkNodeIgnoreColor(t, root.Right, 2, "f")
 }
+
+func TestInsertDataAt(t *testing.T) {
+	root := CreateDataNode("d", "root", 0, true, nil, nil, nil)
+	root.InsertDataAt("a", "left", 0)
+	checkNodeIgnoreColor(t, root, 2, "d")
+	checkNodeIgnoreColor(t, root.Left, 1, "a")
+	root.InsertDataAt("g", "right", 0)
+	checkNodeIgnoreColor(t, root, 2, "d")
+	checkNodeIgnoreColor(t, root.Left, 1, "a")
+	checkNodeIgnoreColor(t, root.Right, 1, "g")
+	root.InsertDataAt("b", "leftright", 0)
+	checkNodeIgnoreColor(t, root, 3, "d")
+	checkNodeIgnoreColor(t, root.Left, 2, "a")
+	checkNodeIgnoreColor(t, root.Right, 1, "g")
+	checkNodeIgnoreColor(t, root.Left.Right, 1, "b")
+	root.InsertDataAt("c", "leftrightright", 0)
+	checkNodeIgnoreColor(t, root, 4, "d")
+	checkNodeIgnoreColor(t, root.Left, 3, "a")
+	checkNodeIgnoreColor(t, root.Right, 1, "g")
+	checkNodeIgnoreColor(t, root.Left.Right, 2, "b")
+	checkNodeIgnoreColor(t, root.Left.Right.Right, 1, "c")
+	root.InsertDataAt("f", "rightleft", 0)
+	checkNodeIgnoreColor(t, root, 4, "d")
+	checkNodeIgnoreColor(t, root.Left, 3, "a")
+	checkNodeIgnoreColor(t, root.Right, 2, "g")
+	checkNodeIgnoreColor(t, root.Left.Right, 2, "b")
+	checkNodeIgnoreColor(t, root.Left.Right.Right, 1, "c")
+	checkNodeIgnoreColor(t, root.Right.Left, 1, "f")
+	root.InsertDataAt("e", "rightleftleft", 0)
+	checkNodeIgnoreColor(t, root, 4, "d")
+	checkNodeIgnoreColor(t, root.Left, 3, "a")
+	checkNodeIgnoreColor(t, root.Right, 3, "g")
+	checkNodeIgnoreColor(t, root.Left.Right, 2, "b")
+	checkNodeIgnoreColor(t, root.Left.Right.Right, 1, "c")
+	checkNodeIgnoreColor(t, root.Right.Left, 2, "f")
+	checkNodeIgnoreColor(t, root.Right.Left.Left, 1, "e")
+}
+
+func TestGetData(t *testing.T) {
+	root := CreateDataNode("d", "root", 0, true, nil, nil, nil)
+	root.InsertDataAt("a", "left", 0)
+	root.InsertDataAt("g", "right", 0)
+	root.InsertDataAt("b", "leftright", 0)
+	root.InsertDataAt("c", "leftrightright", 0)
+	root.InsertDataAt("f", "rightleft", 0)
+	root.InsertDataAt("e", "rightleftleft", 0)
+	if root.GetData("d") != "root" {
+		t.Error("Wrong data.")
+	}
+	if root.GetData("a") != "left" {
+		t.Error("Wrong data.")
+	}
+	if root.GetData("g") != "right" {
+		t.Error("Wrong data.")
+	}
+	if root.GetData("b") != "leftright" {
+		t.Error("Wrong data.")
+	}
+	if root.GetData("c") != "leftrightright" {
+		t.Error("Wrong data.")
+	}
+	if root.GetData("f") != "rightleft" {
+		t.Error("Wrong data.")
+	}
+	if root.GetData("e") != "rightleftleft" {
+		t.Error("Wrong data.")
+	}
+}
