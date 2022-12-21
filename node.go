@@ -131,92 +131,6 @@ func (dn *DataNodeRBT) Height() uint {
 	}
 }
 
-// Adapted from: https://en.wikipedia.org/wiki/Red%E2%80%93black_tree
-//
-// BALANCE Wikipedia
-//
-// func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
-// 	var parent = node.Parent
-// 	var gparent, tmp *DataNodeRBT
-// 	for parent != nil {
-// 		if parent.Color == BLACK {
-// 			return root
-// 		}
-// 		gparent = parent.Parent
-// 		if gparent == nil {
-// 			parent.Color = BLACK
-// 			return root
-// 		}
-
-// 		dir := LEFT
-// 		tmp = gparent.Right
-// 		if parent == tmp {
-// 			tmp = gparent.Left
-// 			dir = RIGHT
-// 		}
-// 		if tmp == nil || tmp.Color == BLACK {
-// 			if dir == LEFT && node == parent.Right {
-// 				rotate(root, parent, dir)
-// 				node = parent
-// 				parent = gparent.Left
-// 			} else if dir == RIGHT && node == parent.Left {
-// 				rotate(root, parent, dir)
-// 				node = parent
-// 				parent = gparent.Right
-// 			}
-// 			root = rotate(root, gparent, !dir)
-// 			parent.Color = BLACK
-// 			gparent.Color = RED
-// 			return root
-// 		}
-// 		parent.Color = BLACK
-// 		tmp.Color = BLACK
-// 		gparent.Color = RED
-// 		node = gparent
-// 	}
-// 	return root
-// }
-
-// func rotate(root *DataNodeRBT, parent *DataNodeRBT, dir RBDir) *DataNodeRBT {
-// 	gparent := parent.Parent
-// 	var s, c *DataNodeRBT
-// 	if dir == LEFT {
-// 		s = parent.Right
-// 		if s != nil {
-// 			c = s.Left
-// 			parent.Right = c
-// 			if c != nil {
-// 				c.Parent = parent
-// 			}
-// 			s.Left = parent
-// 		}
-// 	} else {
-// 		s = parent.Left
-// 		if s != nil {
-// 			c = s.Right
-// 			parent.Left = c
-// 			if c != nil {
-// 				c.Parent = parent
-// 			}
-// 			s.Right = parent
-// 		}
-// 	}
-// 	if s != nil {
-// 		parent.Parent = s
-// 		s.Parent = gparent
-// 		if gparent != nil {
-// 			if parent == gparent.Right {
-// 				gparent.Right = s
-// 			} else {
-// 				gparent.Left = s
-// 			}
-// 		} else {
-// 			return s
-// 		}
-// 	}
-// 	return root
-// }
-
 // Adapted from: https://github.com/torvalds/linux/blob/master/lib/rbtree.c
 //
 // Balance Linux
@@ -227,8 +141,7 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 		if parent == nil {
 			node.Color = BLACK
 			return root
-		}
-		if parent.Color == BLACK {
+		} else if parent.Color == BLACK {
 			return root
 		}
 		gparent = parent.Parent
@@ -236,17 +149,23 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 			parent.Color = BLACK
 			return parent
 		}
+		dir := LEFT
 		tmp = gparent.Right
-		if parent != tmp {
-			if tmp != nil && tmp.Color == RED {
-				rb_set_parent_color(tmp, gparent, BLACK)
-				rb_set_parent_color(parent, gparent, BLACK)
-				node = gparent
-				parent = node.Parent
-				rb_set_parent_color(node, parent, RED)
-				continue
-			}
+		if parent == tmp {
+			dir = RIGHT
+			tmp = gparent.Left
+		}
 
+		if tmp != nil && tmp.Color == RED {
+			rb_set_parent_color(tmp, gparent, BLACK)
+			rb_set_parent_color(parent, gparent, BLACK)
+			node = gparent
+			parent = node.Parent
+			rb_set_parent_color(node, parent, RED)
+			continue
+		}
+
+		if dir == LEFT {
 			tmp = parent.Right
 			if node == tmp {
 				tmp = node.Left
@@ -263,23 +182,7 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 
 			gparent.Left = tmp
 			parent.Right = gparent
-			if tmp != nil {
-				rb_set_parent_color(tmp, gparent, BLACK)
-			}
-			root = rb_rotate_set_parents(gparent, parent, root, RED)
-			// augment_rotate(gparent, parent)
-			break
 		} else {
-			tmp = gparent.Left
-			if tmp != nil && tmp.Color == RED {
-				rb_set_parent_color(tmp, gparent, BLACK)
-				rb_set_parent_color(parent, gparent, BLACK)
-				node = gparent
-				parent = node.Parent
-				rb_set_parent_color(node, parent, RED)
-				continue
-			}
-
 			tmp = parent.Left
 			if node == tmp {
 				tmp = node.Right
@@ -296,13 +199,24 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 
 			gparent.Right = tmp
 			parent.Left = gparent
-			if tmp != nil {
-				rb_set_parent_color(tmp, gparent, BLACK)
+		}
+		if tmp != nil {
+			rb_set_parent_color(tmp, gparent, BLACK)
+		}
+		tmp = gparent.Parent
+		parent.Parent = gparent.Parent
+		parent.Color = gparent.Color
+		rb_set_parent_color(gparent, parent, RED)
+		if tmp != nil {
+			if tmp.Left == gparent {
+				tmp.Left = parent
+			} else {
+				tmp.Right = parent
 			}
-			root = rb_rotate_set_parents(gparent, parent, root, RED)
-			//augment_rotate(gparent, parent)
 			break
 		}
+		//augment_rotate(gparent, parent)
+		return parent
 	}
 	return root
 }
@@ -310,25 +224,4 @@ func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
 func rb_set_parent_color(node *DataNodeRBT, parent *DataNodeRBT, color RBColor) {
 	node.Parent = parent
 	node.Color = color
-}
-
-func rb_change_child(old *DataNodeRBT, new *DataNodeRBT, parent *DataNodeRBT, root *DataNodeRBT) *DataNodeRBT {
-	if parent != nil {
-		if parent.Left == old {
-			parent.Left = new
-		} else {
-			parent.Right = new
-		}
-	} else {
-		return new
-	}
-	return root
-}
-
-func rb_rotate_set_parents(old *DataNodeRBT, new *DataNodeRBT, root *DataNodeRBT, color RBColor) *DataNodeRBT {
-	parent := old.Parent
-	new.Parent = old.Parent
-	new.Color = old.Color
-	rb_set_parent_color(old, new, color)
-	return rb_change_child(old, new, parent, root)
 }
