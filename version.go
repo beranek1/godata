@@ -11,61 +11,52 @@ type DataVersion interface {
 
 type DataVersionLinkedSortedList struct {
 	data      any
-	end       bool
-	next      DataVersion
+	next      *DataVersionLinkedSortedList
 	timestamp int64
 }
 
-func CreateDataVersion() DataVersion {
-	return DataVersionLinkedSortedList{nil, true, nil, 0}
+func CreateDataVersion(data any, timestamp int64) *DataVersionLinkedSortedList {
+	return &DataVersionLinkedSortedList{data, nil, timestamp}
 }
 
-func (dv DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) DataVersion {
-	if dv.end {
-		return DataVersionLinkedSortedList{data, false, &dv, timestamp}
-	} else if dv.timestamp <= timestamp {
-		return DataVersionLinkedSortedList{data, false, &dv, timestamp}
+func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *DataVersionLinkedSortedList {
+	if dv == nil || dv.timestamp <= timestamp {
+		return &DataVersionLinkedSortedList{data, dv, timestamp}
+	} else if dv.next == nil {
+		dv.next = &DataVersionLinkedSortedList{data, nil, timestamp}
 	} else {
 		dv.next = dv.next.InsertDataAt(data, timestamp)
-		return dv
 	}
+	return dv
 }
 
-func (dv DataVersionLinkedSortedList) GetData() any {
-	if dv.end {
+func (dv *DataVersionLinkedSortedList) GetData() any {
+	if dv == nil {
 		return nil
 	}
 	return dv.data
 }
 
-func (dv DataVersionLinkedSortedList) GetDataAt(timestamp int64) any {
-	if dv.end {
+func (dv *DataVersionLinkedSortedList) GetDataAt(timestamp int64) any {
+	if dv == nil {
 		return nil
-	}
-	if dv.timestamp <= timestamp {
+	} else if dv.timestamp <= timestamp {
 		return dv.data
+	} else if dv.next == nil {
+		return nil
 	}
 	return dv.next.GetDataAt(timestamp)
 }
 
-func (dv DataVersionLinkedSortedList) DeleteVersionsAt(timestamp int64) DataVersion {
-	if dv.end {
-		return dv
-	} else if dv.timestamp <= timestamp {
-		return dv.next
-	} else {
-		next := dv.next.DeleteVersionsAt(timestamp)
-		if next != nil {
-			dv.next = next
-		}
-		return dv
+func (dv *DataVersionLinkedSortedList) DeleteVersionsAt(timestamp int64) *DataVersionLinkedSortedList {
+	if dv == nil || dv.timestamp <= timestamp {
+		return nil
+	} else if dv.next != nil {
+		dv.next = dv.next.DeleteVersionsAt(timestamp)
 	}
+	return dv
 }
 
-func (dv DataVersionLinkedSortedList) IsEmpty() bool {
-	return dv.end
-}
-
-func (dv DataVersionLinkedSortedList) GetTimestamp() int64 {
+func (dv *DataVersionLinkedSortedList) GetTimestamp() int64 {
 	return dv.timestamp
 }

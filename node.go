@@ -33,11 +33,11 @@ type DataNodeRBT struct {
 	name    string
 	Parent  *DataNodeRBT
 	Right   *DataNodeRBT
-	version DataVersion
+	version *DataVersionLinkedSortedList
 }
 
 func CreateDataNode(name string, data any, timestamp int64, color RBColor, parent *DataNodeRBT, left *DataNodeRBT, right *DataNodeRBT) *DataNodeRBT {
-	dv := CreateDataVersion().InsertDataAt(data, timestamp)
+	dv := CreateDataVersion(data, timestamp)
 	return &DataNodeRBT{color, left, name, parent, right, dv}
 }
 

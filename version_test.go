@@ -5,8 +5,8 @@ import (
 )
 
 func TestCreateDataVersion(t *testing.T) {
-	version := CreateDataVersion()
-	if !version.IsEmpty() {
+	var version *DataVersionLinkedSortedList
+	if version != nil {
 		t.Error("New instance not empty.")
 	}
 	if version.GetData() != nil {
@@ -16,7 +16,7 @@ func TestCreateDataVersion(t *testing.T) {
 		t.Error("Element at timestamp 0 of empty data version is not end.")
 	}
 	version = version.InsertDataAt(5, 10)
-	if version.IsEmpty() {
+	if version == nil {
 		t.Error("Inserting first element failed.")
 	}
 	if version.GetData() == nil {
@@ -69,7 +69,7 @@ func TestCreateDataVersion(t *testing.T) {
 	if version.GetDataAt(50) == 20 {
 		t.Error("Deletion of versions at timestamp 50 didn't affect latest version.")
 	}
-	if !version.IsEmpty() {
+	if version != nil {
 		t.Error("Data version not empty after deletion at timestamp 50.")
 	}
 }
