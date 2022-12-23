@@ -20,37 +20,39 @@ func Manage(path string) (DataManager, error) {
 	dm.Path = path
 	dm.tree = CreateDataTree()
 	err := os.MkdirAll(dm.Path, 0750)
+	if err != nil && !os.IsExist(err) {
+		return dm, err
+	}
+	err = dm.importData()
+	return dm, err
+}
+
+func (dm DataManager) importData() error {
+	nodes, err := os.ReadDir(dm.Path)
 	if err != nil {
-		if os.IsExist(err) {
-			nodes, err := os.ReadDir(dm.Path)
-			if err != nil {
-				return dm, err
-			}
-			for _, node := range nodes {
-				if node.IsDir() {
-					versions, err := os.ReadDir(dm.Path + "/" + node.Name())
+		return err
+	}
+	for _, node := range nodes {
+		if node.IsDir() {
+			versions, err := os.ReadDir(dm.Path + "/" + node.Name())
+			if err == nil {
+				for _, version := range versions {
+					timestamp, err := strconv.ParseInt(version.Name(), timestampBase, 64)
 					if err == nil {
-						for _, version := range versions {
-							timestamp, err := strconv.ParseInt(version.Name(), timestampBase, 64)
+						dataBytes, err := os.ReadFile(dm.Path + "/" + node.Name() + "/" + version.Name())
+						if err == nil {
+							var data any
+							err = json.Unmarshal(dataBytes, &data)
 							if err == nil {
-								dataBytes, err := os.ReadFile(dm.Path + "/" + node.Name() + "/" + version.Name())
-								if err == nil {
-									var data any
-									err = json.Unmarshal(dataBytes, &data)
-									if err == nil {
-										dm.InsertDataAt(node.Name(), data, timestamp)
-									}
-								}
+								dm.InsertDataAt(node.Name(), data, timestamp)
 							}
 						}
 					}
 				}
 			}
-		} else {
-			return dm, err
 		}
 	}
-	return dm, nil
+	return nil
 }
 
 // Inserts latest data at current timestamp. See below.
