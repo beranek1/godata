@@ -4,6 +4,8 @@ type DataNode interface {
 	InsertDataAt(string, any, int64) DataNode
 	GetData(string) any
 	GetDataAt(string, int64) any
+	GetDataRange(string, int64, int64) map[int64]any
+	GetDataRangeInterval(string, int64, int64, int64) map[int64]any
 	DeleteVersionsAt(int64)
 }
 
@@ -93,6 +95,38 @@ func (dn *DataNodeRBT) GetDataAt(name string, timestamp int64) any {
 			return nil
 		}
 		return dn.Right.GetDataAt(name, timestamp)
+	}
+}
+
+func (dn *DataNodeRBT) GetDataRange(name string, start int64, end int64) map[int64]any {
+	if dn.name == name {
+		return dn.version.GetDataRange(start, end)
+	} else if dn.name > name {
+		if dn.Left == nil {
+			return nil
+		}
+		return dn.Left.GetDataRange(name, start, end)
+	} else {
+		if dn.Right == nil {
+			return nil
+		}
+		return dn.Right.GetDataRange(name, start, end)
+	}
+}
+
+func (dn *DataNodeRBT) GetDataRangeInterval(name string, start int64, end int64, interval int64) map[int64]any {
+	if dn.name == name {
+		return dn.version.GetDataRangeInterval(start, end, interval)
+	} else if dn.name > name {
+		if dn.Left == nil {
+			return nil
+		}
+		return dn.Left.GetDataRangeInterval(name, start, end, interval)
+	} else {
+		if dn.Right == nil {
+			return nil
+		}
+		return dn.Right.GetDataRangeInterval(name, start, end, interval)
 	}
 }
 

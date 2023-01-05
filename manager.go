@@ -76,14 +76,36 @@ func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool 
 	return err == nil
 }
 
-// Looks for latest version with given key and writes to data if successful. Returns bool indicating whether operation was successful.
+// Looks for latest version with given key. Returns value or nil if unsuccessful.
 func (dm DataManager) GetData(name string) any {
 	return dm.tree.GetData(name)
 }
 
-// Looks for version at given timestamp with given key and writes to data if successful. Returns bool indicating whether operation was successful.
+// Looks for version at given timestamp with given key. Returns value or nil if unsuccessful.
 func (dm DataManager) GetDataAt(name string, timestamp int64) any {
 	return dm.tree.GetDataAt(name, timestamp)
+}
+
+// Looks for versions in given timestamp range with given key. Returns map of values or nil if unsuccessful.
+func (dm DataManager) GetDataRange(name string, start int64, end int64) map[int64]any {
+	return dm.tree.GetDataRange(name, start, end)
+}
+
+// Looks for versions starting at given timestamp. Returns map of values or nil if unsuccessful.
+func (dm DataManager) GetDataFrom(name string, start int64) map[int64]any {
+	timestamp := time.Now().UnixNano()
+	return dm.tree.GetDataRange(name, start, timestamp)
+}
+
+// Looks for versions in interval within given timestamp range with given key. Returns map of values or nil if unsuccessful.
+func (dm DataManager) GetDataRangeInterval(name string, start int64, end int64, interval int64) map[int64]any {
+	return dm.tree.GetDataRangeInterval(name, start, end, interval)
+}
+
+// Looks for versions in interval starting at given timestamp. Returns map of values or nil if unsuccessful.
+func (dm DataManager) GetDataFromInterval(name string, start int64, interval int64) any {
+	timestamp := time.Now().UnixNano()
+	return dm.tree.GetDataRangeInterval(name, start, timestamp, interval)
 }
 
 // Remove all versions equal or older than the provided timestamp

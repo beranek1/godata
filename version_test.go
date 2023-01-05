@@ -73,3 +73,57 @@ func TestCreateDataVersion(t *testing.T) {
 		t.Error("Data version not empty after deletion at timestamp 50.")
 	}
 }
+
+func TestVersionRange(t *testing.T) {
+	var version *DataVersionLinkedSortedList
+	i := 1
+	c := 100
+	for i <= c {
+		version = version.InsertDataAt(i, int64(i))
+		i++
+	}
+	res := version.GetDataRange(0, int64(c))
+	if len(res) != c {
+		t.Error("Full range does not contain all elements.")
+	}
+	res = version.GetDataRange(int64(c)/2, int64(c))
+	if len(res) != c/2 {
+		t.Error("Half range does not contain half elements.")
+	}
+	res = version.GetDataRange(1, 0)
+	if res != nil {
+		t.Error("Range accepts invalid range.")
+	}
+	res = version.GetDataRange(int64(c), int64(c)*2)
+	if len(res) != 0 {
+		t.Error("Elements after range returned.")
+	}
+	res = version.GetDataRange(-int64(c), 0)
+	if len(res) != 0 {
+		t.Error("Elements before range returned.")
+	}
+	res = version.GetDataRangeInterval(0, int64(c), 5)
+	if len(res) != c/5 {
+		t.Error("Full range with interval 5 does not contain fifth of all elements.")
+	}
+	res = version.GetDataRangeInterval(1, 0, 5)
+	if res != nil {
+		t.Error("Range accepts invalid range.")
+	}
+	res = version.GetDataRangeInterval(int64(c), int64(c)*2, 5)
+	if len(res) != 0 {
+		t.Error("Elements after range returned.")
+	}
+	res = version.GetDataRangeInterval(-int64(c), 0, 5)
+	if len(res) != 0 {
+		t.Error("Elements before range returned.")
+	}
+	res = version.GetDataRangeInterval(0, int64(c), 0)
+	if res != nil {
+		t.Error("Interval accept 0 as interval.")
+	}
+	res = version.GetDataRangeInterval(0, int64(c), -1)
+	if res != nil {
+		t.Error("Interval accepts negative interval.")
+	}
+}
