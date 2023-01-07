@@ -103,7 +103,7 @@ func (dm DataManager) GetDataRangeInterval(name string, start int64, end int64, 
 }
 
 // Looks for versions in interval starting at given timestamp. Returns map of values or nil if unsuccessful.
-func (dm DataManager) GetDataFromInterval(name string, start int64, interval int64) any {
+func (dm DataManager) GetDataFromInterval(name string, start int64, interval int64) map[int64]any {
 	timestamp := time.Now().UnixNano()
 	return dm.tree.GetDataRangeInterval(name, start, timestamp, interval)
 }
