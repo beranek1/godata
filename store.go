@@ -6,15 +6,15 @@ import (
 
 // Wrapper for DataManager to support godatainterface definitions
 type DataStore struct {
-	manager DataManager
+	manager *DataManager
 }
 
-func Create(path string) (DataStore, error) {
+func Create(path string) (*DataStore, error) {
 	manager, err := Manage(path)
 	if err != nil {
-		return DataStore{}, err
+		return &DataStore{}, err
 	}
-	return DataStore{manager: manager}, nil
+	return &DataStore{manager: manager}, nil
 }
 
 func (ds DataStore) Put(key string, value any) error {
