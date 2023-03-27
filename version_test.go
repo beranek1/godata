@@ -74,14 +74,25 @@ func TestCreateDataVersion(t *testing.T) {
 	}
 }
 
-func TestDuplicateDataVersion(t *testing.T) {
+func TestDuplicateDoubleDataVersion(t *testing.T) {
 	var version *DataVersionLinkedSortedList
 	version = version.InsertDataAt(5, 10)
 	old_timestamp := version.GetTimestamp()
+	old_end := version.GetEnd()
+	if old_timestamp != old_end {
+		t.Error("End of single version does not equal timestamp.")
+	}
 	version = version.InsertDataAt(5, 40)
 	new_timestamp := version.GetTimestamp()
+	new_end := version.GetEnd()
 	if old_timestamp != new_timestamp {
 		t.Error("Data was duplicated.")
+	}
+	if old_end == new_end {
+		t.Error("End was not updated.")
+	}
+	if new_timestamp == new_end {
+		t.Error("End is not timestamp of new duplicate.")
 	}
 	version = version.DeleteVersionsAt(10)
 	if version.GetDataAt(20) == 5 {
@@ -92,6 +103,50 @@ func TestDuplicateDataVersion(t *testing.T) {
 	}
 	if version != nil {
 		t.Error("Data version not empty after deletion at timestamp 10.")
+	}
+}
+
+func TestDuplicateTripleDataVersion(t *testing.T) {
+	var version *DataVersionLinkedSortedList
+	version = version.InsertDataAt(5, 10)
+	version = version.InsertDataAt(5, 40)
+	new_end := version.GetEnd()
+	version = version.InsertDataAt(10, 25)
+	if version.GetTimestamp() != new_end {
+		t.Error("Double version split resulted in wrong timestamp.")
+	}
+	if version.GetTimestamp() != version.GetEnd() {
+		t.Error("End does not equal timestamp.")
+	}
+	if version.GetDataAt(25) != 10 {
+		t.Error("New version in between has wrong value.")
+	}
+	if version.GetDataAt(20) != 5 {
+		t.Error("First version has wrong value.")
+	}
+	if version.GetDataAt(50) != 5 {
+		t.Error("Second partition of first version has wrong value.")
+	}
+	version = version.DeleteVersionsAt(10)
+	if version.GetDataAt(20) == 5 {
+		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
+	}
+	if version.GetDataAt(30) != 10 {
+		t.Error("Deletion of versions at timestamp 10 affected new version in between.")
+	}
+	if version.GetDataAt(50) != 5 {
+		t.Error("Deletion of versions at timestamp 10 affected second partition of first version.")
+	}
+	if version == nil {
+		t.Error("Data version empty after deletion at timestamp 10.")
+	}
+	version = version.DeleteVersionsAt(25)
+	if version == nil {
+		t.Error("Data version empty after deletion at timestamp 25.")
+	}
+	version = version.DeleteVersionsAt(40)
+	if version != nil {
+		t.Error("Data version not empty after deletion at timestamp 40.")
 	}
 }
 

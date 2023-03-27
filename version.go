@@ -48,7 +48,7 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 			if len(dv.partitions) == 0 {
 				new_timestamp := dv.end
 				dv.end = dv.timestamp
-				return &DataVersionLinkedSortedList{data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_timestamp, []int64{}}
+				return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_timestamp, []int64{}}
 			}
 			pos := -1
 			for i := 0; i < len(dv.partitions); i++ {
@@ -63,7 +63,7 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 				old := make([]int64, 0)
 				old = append(old, dv.partitions[:len(dv.partitions)-1]...)
 				dv.partitions = old
-				return &DataVersionLinkedSortedList{data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_timestamp, []int64{}}
+				return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_timestamp, []int64{}}
 			}
 			new_timestamp := dv.partitions[pos]
 			new_end := dv.end
@@ -77,7 +77,7 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 			old = append(old, dv.partitions[:pos-1]...)
 			new = append(new, dv.partitions[pos+1:]...)
 			dv.partitions = old
-			return &DataVersionLinkedSortedList{data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_end, new}
+			return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_end, new}
 		}
 		return &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}
 	} else if dv.next == nil {
@@ -161,4 +161,8 @@ func (dv *DataVersionLinkedSortedList) DeleteVersionsAt(timestamp int64) *DataVe
 
 func (dv *DataVersionLinkedSortedList) GetTimestamp() int64 {
 	return dv.timestamp
+}
+
+func (dv *DataVersionLinkedSortedList) GetEnd() int64 {
+	return dv.end
 }
