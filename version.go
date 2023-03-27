@@ -200,8 +200,39 @@ func (dv *DataVersionLinkedSortedList) getDataRangeIntervalI(start int64, end in
 }
 
 func (dv *DataVersionLinkedSortedList) DeleteVersionsAt(timestamp int64) *DataVersionLinkedSortedList {
-	if dv == nil || dv.timestamp <= timestamp {
+	if dv == nil {
 		return nil
+	} else if dv.timestamp <= timestamp {
+		if dv.end <= timestamp {
+			return nil
+		}
+		if len(dv.partitions) == 0 {
+			dv.timestamp = dv.end
+			dv.changed = true
+			dv.next = nil
+			return dv
+		}
+		pos := -1
+		for i := 0; i < len(dv.partitions); i++ {
+			if dv.partitions[i] > timestamp {
+				pos = i
+				break
+			}
+		}
+		if pos < 0 {
+			dv.timestamp = dv.end
+			dv.changed = true
+			dv.next = nil
+			dv.partitions = make([]int64, 0)
+			return dv
+		}
+		dv.timestamp = dv.partitions[pos]
+		new := make([]int64, 0)
+		new = append(new, dv.partitions[pos+1:]...)
+		dv.changed = true
+		dv.next = nil
+		dv.partitions = new
+		return dv
 	} else if dv.next != nil {
 		dv.next = dv.next.DeleteVersionsAt(timestamp)
 	}

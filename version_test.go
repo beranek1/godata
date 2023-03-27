@@ -98,9 +98,10 @@ func TestDuplicateDoubleDataVersion(t *testing.T) {
 	if version.GetDataAt(20) == 5 {
 		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
 	}
-	if version.GetDataAt(50) == 5 {
-		t.Error("Deletion of versions at timestamp 10 didn't affect latest version.")
+	if version.GetDataAt(50) != 5 {
+		t.Error("Deletion of versions at timestamp 10 affected latest version.")
 	}
+	version = version.DeleteVersionsAt(40)
 	if version != nil {
 		t.Error("Data version not empty after deletion at timestamp 10.")
 	}
@@ -216,8 +217,11 @@ func TestDuplicateSplitSpecialTripleDataVersion(t *testing.T) {
 		t.Error("Second partition of first version has wrong value.")
 	}
 	version = version.DeleteVersionsAt(10)
-	if version.GetDataAt(20) == 5 {
+	if version.GetDataAt(15) == 5 {
 		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
+	}
+	if version.GetDataAt(20) != 5 {
+		t.Error("Deletion of versions at timestamp 10 affected second part of first version.")
 	}
 	if version.GetDataAt(27) != 10 {
 		t.Error("Deletion of versions at timestamp 10 affected new version in between.")
@@ -261,8 +265,11 @@ func TestDuplicateSplitQuadDataVersion(t *testing.T) {
 		t.Error("Second partition of first version has wrong value.")
 	}
 	version = version.DeleteVersionsAt(10)
-	if version.GetDataAt(20) == 5 {
+	if version.GetDataAt(15) == 5 {
 		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
+	}
+	if version.GetDataAt(20) != 5 {
+		t.Error("Deletion of versions at timestamp 10 affected second part of first version.")
 	}
 	if version.GetDataAt(27) != 10 {
 		t.Error("Deletion of versions at timestamp 10 affected new version in between.")
