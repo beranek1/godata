@@ -74,6 +74,27 @@ func TestCreateDataVersion(t *testing.T) {
 	}
 }
 
+func TestDuplicateDataVersion(t *testing.T) {
+	var version *DataVersionLinkedSortedList
+	version = version.InsertDataAt(5, 10)
+	old_timestamp := version.GetTimestamp()
+	version = version.InsertDataAt(5, 40)
+	new_timestamp := version.GetTimestamp()
+	if old_timestamp != new_timestamp {
+		t.Error("Data was duplicated.")
+	}
+	version = version.DeleteVersionsAt(10)
+	if version.GetDataAt(20) == 5 {
+		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
+	}
+	if version.GetDataAt(50) == 5 {
+		t.Error("Deletion of versions at timestamp 10 didn't affect latest version.")
+	}
+	if version != nil {
+		t.Error("Data version not empty after deletion at timestamp 10.")
+	}
+}
+
 func TestVersionRange(t *testing.T) {
 	var version *DataVersionLinkedSortedList
 	i := 1
