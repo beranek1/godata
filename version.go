@@ -1,6 +1,11 @@
 package godata
 
-import "reflect"
+import (
+	"encoding/json"
+	"os"
+	"reflect"
+	"strconv"
+)
 
 type DataVersion interface {
 	InsertDataAt(any, int64) DataVersion
@@ -19,15 +24,54 @@ type DataVersionLinkedSortedList struct {
 	timestamp  int64
 	end        int64
 	partitions []int64
+	changed    bool
+}
+
+type DataVersionPartitionedExport struct {
+	Data       any
+	Timestamp  int64
+	End        int64
+	Partitions []int64
 }
 
 func CreateDataVersion(data any, timestamp int64) *DataVersionLinkedSortedList {
-	return &DataVersionLinkedSortedList{data, nil, timestamp, timestamp, []int64{}}
+	return &DataVersionLinkedSortedList{data, nil, timestamp, timestamp, []int64{}, true}
+}
+
+func ImportDataVersion(raw []byte) (*DataVersionLinkedSortedList, error) {
+	var dve DataVersionPartitionedExport
+	err := json.Unmarshal(raw, &dve)
+	if err == nil {
+		return &DataVersionLinkedSortedList{dve.Data, nil, dve.Timestamp, dve.End, dve.Partitions, false}, nil
+	}
+	return nil, err
+}
+
+func (dv *DataVersionLinkedSortedList) ImportVersion(raw []byte) *DataVersionLinkedSortedList {
+	dvi, err := ImportDataVersion(raw)
+	if err == nil {
+		return dv.InsertVersion(dvi)
+	}
+	return dv
+}
+
+func (dv *DataVersionLinkedSortedList) InsertVersion(dvi *DataVersionLinkedSortedList) *DataVersionLinkedSortedList {
+	if dv == nil {
+		return dvi
+	} else if dv.timestamp <= dvi.timestamp {
+		dvi.next = dv
+		return dvi
+	} else if dv.next == nil {
+		dv.next = dvi
+	} else {
+		dv.next = dv.next.InsertVersion(dvi)
+	}
+	return dv
 }
 
 func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *DataVersionLinkedSortedList {
 	if dv == nil {
-		return &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}
+		return &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}, true}
 	} else if dv.timestamp <= timestamp {
 		if reflect.TypeOf(dv.data) == reflect.TypeOf(data) && reflect.DeepEqual(dv.data, data) {
 			if dv.timestamp != timestamp {
@@ -48,7 +92,8 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 			if len(dv.partitions) == 0 {
 				new_timestamp := dv.end
 				dv.end = dv.timestamp
-				return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_timestamp, []int64{}}
+				dv.changed = true
+				return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}, true}, new_timestamp, new_timestamp, []int64{}, true}
 			}
 			pos := -1
 			for i := 0; i < len(dv.partitions); i++ {
@@ -63,7 +108,8 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 				old := make([]int64, 0)
 				old = append(old, dv.partitions[:len(dv.partitions)-1]...)
 				dv.partitions = old
-				return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_timestamp, []int64{}}
+				dv.changed = true
+				return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}, true}, new_timestamp, new_timestamp, []int64{}, true}
 			}
 			new_timestamp := dv.partitions[pos]
 			new_end := dv.end
@@ -79,11 +125,12 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 			}
 			new = append(new, dv.partitions[pos+1:]...)
 			dv.partitions = old
-			return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_end, new}
+			dv.changed = true
+			return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}, true}, new_timestamp, new_end, new, true}
 		}
-		return &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}
+		return &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}, true}
 	} else if dv.next == nil {
-		dv.next = &DataVersionLinkedSortedList{data, nil, timestamp, timestamp, []int64{}}
+		dv.next = &DataVersionLinkedSortedList{data, nil, timestamp, timestamp, []int64{}, true}
 	} else {
 		dv.next = dv.next.InsertDataAt(data, timestamp)
 	}
@@ -167,4 +214,24 @@ func (dv *DataVersionLinkedSortedList) GetTimestamp() int64 {
 
 func (dv *DataVersionLinkedSortedList) GetEnd() int64 {
 	return dv.end
+}
+
+func (dv *DataVersionLinkedSortedList) Export() ([]byte, error) {
+	dve := DataVersionPartitionedExport{dv.data, dv.timestamp, dv.end, dv.partitions}
+	return json.Marshal(dve)
+}
+
+func (dv *DataVersionLinkedSortedList) PersistChanges(dir string) error {
+	if dv == nil || !dv.changed {
+		return nil
+	}
+	raw, err := dv.Export()
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(dir+"/"+strconv.FormatInt(dv.timestamp, timestampBase), raw, 0664)
+	if err != nil {
+		return err
+	}
+	return dv.next.PersistChanges(dir)
 }

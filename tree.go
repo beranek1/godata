@@ -1,6 +1,8 @@
 package godata
 
 type DataTree interface {
+	PersistNodeChanges(string, string) error
+	ImportDataVersion(string, []byte)
 	InsertDataAt(string, any, int64)
 	GetData(string) any
 	GetDataAt(string, int64) any
@@ -15,6 +17,15 @@ type DataTreeRBT struct {
 
 func CreateDataTree() *DataTreeRBT {
 	return &DataTreeRBT{nil}
+}
+
+func (dt *DataTreeRBT) ImportDataVersion(name string, raw []byte) {
+	if dt.root == nil {
+		dt.root = ImportDataNode(name, raw, BLACK, nil, nil, nil)
+		return
+	}
+	node := dt.root.ImportDataVersion(name, raw)
+	dt.root = Balance(dt.root, node)
 }
 
 func (dt *DataTreeRBT) InsertDataAt(name string, data any, timestamp int64) {
@@ -66,4 +77,11 @@ func (dt *DataTreeRBT) Height() uint {
 		return 0
 	}
 	return dt.root.Height()
+}
+
+func (dt *DataTreeRBT) PersistNodeChanges(dir string, name string) error {
+	if dt.root == nil {
+		return nil
+	}
+	return dt.root.PersistNodeChanges(dir, name)
 }

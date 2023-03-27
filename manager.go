@@ -1,7 +1,6 @@
 package godata
 
 import (
-	"encoding/json"
 	"os"
 	"strconv"
 	"time"
@@ -35,16 +34,9 @@ func (dm DataManager) importData() error {
 			versions, err := os.ReadDir(dm.Path + "/" + node.Name())
 			if err == nil {
 				for _, version := range versions {
-					timestamp, err := strconv.ParseInt(version.Name(), timestampBase, 64)
+					raw, err := os.ReadFile(dm.Path + "/" + node.Name() + "/" + version.Name())
 					if err == nil {
-						dataBytes, err := os.ReadFile(dm.Path + "/" + node.Name() + "/" + version.Name())
-						if err == nil {
-							var data any
-							err = json.Unmarshal(dataBytes, &data)
-							if err == nil {
-								dm.InsertDataAt(node.Name(), data, timestamp)
-							}
-						}
+						dm.tree.ImportDataVersion(node.Name(), raw)
 					}
 				}
 			}
@@ -62,16 +54,7 @@ func (dm DataManager) InsertData(name string, data any) bool {
 // Inserts data into DataManager with given key and timestamp, additionally updates local files if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool {
 	dm.tree.InsertDataAt(name, data, timestamp)
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		return false
-	}
-	err = os.Mkdir(dm.Path+"/"+name, 0750)
-	if err != nil && !os.IsExist(err) {
-		return false
-	}
-	err = os.WriteFile(dm.Path+"/"+name+"/"+strconv.FormatInt(timestamp, timestampBase), dataBytes, 0664)
-	return err == nil
+	return dm.tree.PersistNodeChanges(dm.Path, name) == nil
 }
 
 // Looks for latest version with given key. Returns value or nil if unsuccessful.

@@ -117,5 +117,5 @@ func TestDSDeleteVersionsAt(t *testing.T) {
 			t.Error("Getting deleted element ", fmt.Sprint(i), " succeeded.")
 		}
 	}
-	os.RemoveAll("dm_test")
+	os.RemoveAll("ds_test")
 }

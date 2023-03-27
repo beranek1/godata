@@ -1,5 +1,7 @@
 package godata
 
+import "os"
+
 type DataNode interface {
 	InsertDataAt(string, any, int64) DataNode
 	GetData(string) any
@@ -41,6 +43,38 @@ type DataNodeRBT struct {
 func CreateDataNode(name string, data any, timestamp int64, color RBColor, parent *DataNodeRBT, left *DataNodeRBT, right *DataNodeRBT) *DataNodeRBT {
 	dv := CreateDataVersion(data, timestamp)
 	return &DataNodeRBT{color, left, name, parent, right, dv}
+}
+
+func ImportDataNode(name string, raw []byte, color RBColor, parent *DataNodeRBT, left *DataNodeRBT, right *DataNodeRBT) *DataNodeRBT {
+	dv, err := ImportDataVersion(raw)
+	if err == nil {
+		return &DataNodeRBT{color, left, name, parent, right, dv}
+	} else {
+		return nil
+	}
+}
+
+func (dn *DataNodeRBT) ImportDataVersion(name string, raw []byte) *DataNodeRBT {
+	if dn.name == name {
+		dn.version = dn.version.ImportVersion(raw)
+		return nil
+	} else {
+		if dn.name > name {
+			if dn.Left == nil {
+				dn.Left = ImportDataNode(name, raw, RED, dn, nil, nil)
+				return dn.Left
+			} else {
+				return dn.Left.ImportDataVersion(name, raw)
+			}
+		} else {
+			if dn.Right == nil {
+				dn.Right = ImportDataNode(name, raw, RED, dn, nil, nil)
+				return dn.Right
+			} else {
+				return dn.Right.ImportDataVersion(name, raw)
+			}
+		}
+	}
 }
 
 func (dn *DataNodeRBT) InsertDataAt(name string, data any, timestamp int64) *DataNodeRBT {
@@ -162,6 +196,26 @@ func (dn *DataNodeRBT) Height() uint {
 		return 1 + hright
 	} else {
 		return 1
+	}
+}
+
+func (dn *DataNodeRBT) PersistNodeChanges(dir string, name string) error {
+	if dn.name == name {
+		err := os.Mkdir(dir+"/"+dn.name, 0750)
+		if err != nil && !os.IsExist(err) {
+			return err
+		}
+		return dn.version.PersistChanges(dir + "/" + dn.name)
+	} else if dn.name > name {
+		if dn.Left == nil {
+			return nil
+		}
+		return dn.Left.PersistNodeChanges(dir, name)
+	} else {
+		if dn.Right == nil {
+			return nil
+		}
+		return dn.Right.PersistNodeChanges(dir, name)
 	}
 }
 
