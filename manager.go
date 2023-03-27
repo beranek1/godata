@@ -15,10 +15,8 @@ type DataManager struct {
 }
 
 // Creates instance of DataManager at given path, initializes instance with previous data located at path.
-func Manage(path string) (DataManager, error) {
-	var dm DataManager
-	dm.Path = path
-	dm.tree = CreateDataTree()
+func Manage(path string) (*DataManager, error) {
+	dm := &DataManager{Path: path, tree: CreateDataTree()}
 	err := os.MkdirAll(dm.Path, 0750)
 	if err != nil && !os.IsExist(err) {
 		return dm, err

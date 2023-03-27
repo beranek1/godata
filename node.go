@@ -169,6 +169,9 @@ func (dn *DataNodeRBT) Height() uint {
 //
 // Balance Linux
 func Balance(root *DataNodeRBT, node *DataNodeRBT) *DataNodeRBT {
+	if node == nil {
+		return root
+	}
 	var parent = node.Parent
 	var gparent, tmp *DataNodeRBT
 	for {
