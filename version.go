@@ -74,7 +74,9 @@ func (dv *DataVersionLinkedSortedList) InsertDataAt(data any, timestamp int64) *
 			}
 			old := make([]int64, 0)
 			new := make([]int64, 0)
-			old = append(old, dv.partitions[:pos-1]...)
+			if pos > 0 {
+				old = append(old, dv.partitions[:pos-1]...)
+			}
 			new = append(new, dv.partitions[pos+1:]...)
 			dv.partitions = old
 			return &DataVersionLinkedSortedList{dv.data, &DataVersionLinkedSortedList{data, dv, timestamp, timestamp, []int64{}}, new_timestamp, new_end, new}

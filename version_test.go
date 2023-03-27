@@ -106,7 +106,7 @@ func TestDuplicateDoubleDataVersion(t *testing.T) {
 	}
 }
 
-func TestDuplicateTripleDataVersion(t *testing.T) {
+func TestDuplicateSplitDoubleDataVersion(t *testing.T) {
 	var version *DataVersionLinkedSortedList
 	version = version.InsertDataAt(5, 10)
 	version = version.InsertDataAt(5, 40)
@@ -132,6 +132,50 @@ func TestDuplicateTripleDataVersion(t *testing.T) {
 		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
 	}
 	if version.GetDataAt(30) != 10 {
+		t.Error("Deletion of versions at timestamp 10 affected new version in between.")
+	}
+	if version.GetDataAt(50) != 5 {
+		t.Error("Deletion of versions at timestamp 10 affected second partition of first version.")
+	}
+	if version == nil {
+		t.Error("Data version empty after deletion at timestamp 10.")
+	}
+	version = version.DeleteVersionsAt(25)
+	if version == nil {
+		t.Error("Data version empty after deletion at timestamp 25.")
+	}
+	version = version.DeleteVersionsAt(40)
+	if version != nil {
+		t.Error("Data version not empty after deletion at timestamp 40.")
+	}
+}
+
+func TestDuplicateSplitTripleDataVersion(t *testing.T) {
+	var version *DataVersionLinkedSortedList
+	version = version.InsertDataAt(5, 10)
+	version = version.InsertDataAt(5, 30)
+	version = version.InsertDataAt(5, 40)
+	version = version.InsertDataAt(10, 25)
+	if version.GetTimestamp() != 30 {
+		t.Error("Double version split resulted in wrong timestamp.")
+	}
+	if version.GetEnd() != 40 {
+		t.Error("End does not equal last timestamp.")
+	}
+	if version.GetDataAt(25) != 10 {
+		t.Error("New version in between has wrong value.")
+	}
+	if version.GetDataAt(20) != 5 {
+		t.Error("First version has wrong value.")
+	}
+	if version.GetDataAt(50) != 5 {
+		t.Error("Second partition of first version has wrong value.")
+	}
+	version = version.DeleteVersionsAt(10)
+	if version.GetDataAt(20) == 5 {
+		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
+	}
+	if version.GetDataAt(27) != 10 {
 		t.Error("Deletion of versions at timestamp 10 affected new version in between.")
 	}
 	if version.GetDataAt(50) != 5 {
