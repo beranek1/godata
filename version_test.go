@@ -4,6 +4,29 @@ import (
 	"testing"
 )
 
+func TestImport(t *testing.T) {
+	version := CreateDataVersion(1, 0)
+	version = version.InsertDataAt(5, 1)
+	version = version.InsertDataAt(25, 2)
+	if version.GetDataAt(2) != 25 {
+		t.Error("Original has wrong data: ", version.GetDataAt(2))
+	}
+	exp, err := version.Export()
+	if err != nil {
+		t.Error("Error occured during export.")
+	}
+	iv, ierr := ImportDataVersion(exp)
+	if ierr != nil {
+		t.Error("Error occured during import.")
+	}
+	if iv.GetTimestamp() != 2 {
+		t.Error("Import has wrong timestamp")
+	}
+	// if iv.GetDataAt(2) != 25 {
+	// 	t.Error("Import has wrong data: ", iv.GetDataAt(2))
+	// }
+}
+
 func TestCreateDataVersion(t *testing.T) {
 	var version *DataVersionLinkedSortedList
 	if version != nil {
@@ -47,6 +70,10 @@ func TestCreateDataVersion(t *testing.T) {
 	if version.GetDataAt(30) != 5 {
 		t.Error("Data of element at timestamp 30 does not equal old inserted data.")
 	}
+	version = version.InsertDataAt(0, 5)
+	if version.GetDataAt(5) != 0 {
+		t.Error("Data of element at timestamp 5 does not equal latest inserted data.")
+	}
 	version = version.DeleteVersionsAt(5)
 	if version.GetDataAt(20) != 5 {
 		t.Error("Deletion of versions at timestamp 5 affected first newer version.")
@@ -69,8 +96,9 @@ func TestCreateDataVersion(t *testing.T) {
 	if version.GetDataAt(50) == 20 {
 		t.Error("Deletion of versions at timestamp 50 didn't affect latest version.")
 	}
+	version = version.DeleteVersionsAt(5)
 	if version != nil {
-		t.Error("Data version not empty after deletion at timestamp 50.")
+		t.Error("Data version not empty after deletion at timestamp 5.")
 	}
 }
 

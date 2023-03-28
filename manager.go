@@ -9,19 +9,35 @@ import (
 var timestampBase = 36
 
 type DataManager struct {
-	Path string
-	tree DataTree
+	Path   string
+	tree   DataTree
+	ticker *time.Ticker
+	done   chan bool
 }
 
 // Creates instance of DataManager at given path, initializes instance with previous data located at path.
 func Manage(path string) (*DataManager, error) {
-	dm := &DataManager{Path: path, tree: CreateDataTree()}
+	dm := &DataManager{Path: path, tree: CreateDataTree(), ticker: time.NewTicker(5 * time.Second), done: make(chan bool)}
 	err := os.MkdirAll(dm.Path, 0750)
 	if err != nil && !os.IsExist(err) {
 		return dm, err
 	}
 	err = dm.importData()
+	dm.startPersisting()
 	return dm, err
+}
+
+func (dm DataManager) startPersisting() {
+	go func() {
+		for {
+			select {
+			case <-dm.done:
+				return
+			case <-dm.ticker.C:
+				dm.PersistChanges()
+			}
+		}
+	}()
 }
 
 func (dm DataManager) importData() error {
@@ -30,16 +46,9 @@ func (dm DataManager) importData() error {
 		return err
 	}
 	for _, node := range nodes {
-		if node.IsDir() {
-			versions, err := os.ReadDir(dm.Path + "/" + node.Name())
-			if err == nil {
-				for _, version := range versions {
-					raw, err := os.ReadFile(dm.Path + "/" + node.Name() + "/" + version.Name())
-					if err == nil {
-						dm.tree.ImportDataVersion(node.Name(), raw)
-					}
-				}
-			}
+		raw, err := os.ReadFile(dm.Path + "/" + node.Name())
+		if err == nil {
+			dm.tree.ImportDataVersion(node.Name(), raw)
 		}
 	}
 	return nil
@@ -54,7 +63,7 @@ func (dm DataManager) InsertData(name string, data any) bool {
 // Inserts data into DataManager with given key and timestamp, additionally updates local files if successful. Returns bool indicating whether operation was successful.
 func (dm DataManager) InsertDataAt(name string, data any, timestamp int64) bool {
 	dm.tree.InsertDataAt(name, data, timestamp)
-	return dm.tree.PersistNodeChanges(dm.Path, name) == nil
+	return true
 }
 
 // Looks for latest version with given key. Returns value or nil if unsuccessful.
@@ -108,4 +117,8 @@ func (dm DataManager) DeleteVersionsAt(timestamp int64) {
 		}
 	}
 	dm.tree.DeleteVersionsAt(timestamp)
+}
+
+func (dm DataManager) PersistChanges() {
+	dm.tree.PersistChanges(dm.Path)
 }

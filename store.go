@@ -66,3 +66,7 @@ func (ds DataStore) FromInterval(key string, start int64, interval int64) (map[i
 func (ds DataStore) DeleteVersionsAt(timestamp int64) {
 	ds.manager.DeleteVersionsAt(timestamp)
 }
+
+func (ds DataStore) PersistChanges() {
+	ds.manager.PersistChanges()
+}

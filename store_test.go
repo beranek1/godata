@@ -85,6 +85,7 @@ func TestCreateExistingDir(t *testing.T) {
 			t.Error("Inserting element ", fmt.Sprint(i), " failed.")
 		}
 	}
+	ds0.PersistChanges()
 	ds1, err1 := Create("ds_test")
 	if err1 != nil {
 		t.Error("Managing existing data dir failed: " + err1.Error())

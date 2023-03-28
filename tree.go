@@ -1,7 +1,7 @@
 package godata
 
 type DataTree interface {
-	PersistNodeChanges(string, string) error
+	PersistChanges(string) error
 	ImportDataVersion(string, []byte)
 	InsertDataAt(string, any, int64)
 	GetData(string) any
@@ -79,9 +79,9 @@ func (dt *DataTreeRBT) Height() uint {
 	return dt.root.Height()
 }
 
-func (dt *DataTreeRBT) PersistNodeChanges(dir string, name string) error {
+func (dt *DataTreeRBT) PersistChanges(dir string) error {
 	if dt.root == nil {
 		return nil
 	}
-	return dt.root.PersistNodeChanges(dir, name)
+	return dt.root.PersistChanges(dir)
 }

@@ -199,24 +199,30 @@ func (dn *DataNodeRBT) Height() uint {
 	}
 }
 
-func (dn *DataNodeRBT) PersistNodeChanges(dir string, name string) error {
-	if dn.name == name {
-		err := os.Mkdir(dir+"/"+dn.name, 0750)
-		if err != nil && !os.IsExist(err) {
+func (dn *DataNodeRBT) PersistChanges(dir string) error {
+	if dn.version != nil {
+		exp, err := dn.version.Export()
+		if err != nil {
 			return err
 		}
-		return dn.version.PersistChanges(dir + "/" + dn.name)
-	} else if dn.name > name {
-		if dn.Left == nil {
-			return nil
+		err = os.WriteFile(dir+"/"+dn.name, exp, 0664)
+		if err != nil {
+			return err
 		}
-		return dn.Left.PersistNodeChanges(dir, name)
-	} else {
-		if dn.Right == nil {
-			return nil
-		}
-		return dn.Right.PersistNodeChanges(dir, name)
 	}
+	if dn.Left != nil {
+		err := dn.Left.PersistChanges(dir)
+		if err != nil {
+			return err
+		}
+	}
+	if dn.Right != nil {
+		err := dn.Right.PersistChanges(dir)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Adapted from: https://github.com/torvalds/linux/blob/master/lib/rbtree.c

@@ -47,6 +47,38 @@ func TestInsertData(t *testing.T) {
 	os.RemoveAll("dm_test")
 }
 
+func TestInsertDataMultipleDifferentVersions(t *testing.T) {
+	os.RemoveAll("dm_test")
+	dm, err := Manage("dm_test")
+	if err != nil {
+		t.Error("Managing not existing data dir failed: " + err.Error())
+	}
+	for i := 0; i < 1000; i++ {
+		for j := 0; j < 100; j++ {
+			if !dm.InsertData(fmt.Sprint(i), j) {
+				t.Error("Inserting element ", fmt.Sprint(i), " failed.")
+			}
+		}
+	}
+	os.RemoveAll("dm_test")
+}
+
+func TestInsertDataMultipleEqualVersions(t *testing.T) {
+	os.RemoveAll("dm_test")
+	dm, err := Manage("dm_test")
+	if err != nil {
+		t.Error("Managing not existing data dir failed: " + err.Error())
+	}
+	for i := 0; i < 1000; i++ {
+		for j := 0; j < 100; j++ {
+			if !dm.InsertData(fmt.Sprint(i), i) {
+				t.Error("Inserting element ", fmt.Sprint(i), " failed.")
+			}
+		}
+	}
+	os.RemoveAll("dm_test")
+}
+
 func TestGetData(t *testing.T) {
 	os.RemoveAll("dm_test")
 	dm, err := Manage("dm_test")
@@ -78,6 +110,34 @@ func TestManageExistingDir(t *testing.T) {
 			t.Error("Inserting element ", fmt.Sprint(i), " failed.")
 		}
 	}
+	dm0.PersistChanges()
+	dm1, err1 := Manage("dm_test")
+	if err1 != nil {
+		t.Error("Managing existing data dir failed: " + err1.Error())
+	}
+	for i := 0; i < 1000; i++ {
+		data := dm1.GetData(fmt.Sprint(i))
+		if data == nil {
+			t.Error("Getting element ", fmt.Sprint(i), " failed.")
+		}
+	}
+	os.RemoveAll("dm_test")
+}
+
+func TestManageExistingDirMultipleDifferentVersions(t *testing.T) {
+	os.RemoveAll("dm_test")
+	dm0, err0 := Manage("dm_test")
+	if err0 != nil {
+		t.Error("Managing not existing data dir failed: " + err0.Error())
+	}
+	for i := 0; i < 1000; i++ {
+		for j := 0; j < 100; j++ {
+			if !dm0.InsertData(fmt.Sprint(i), j) {
+				t.Error("Inserting element ", fmt.Sprint(i), " failed.")
+			}
+		}
+	}
+	dm0.PersistChanges()
 	dm1, err1 := Manage("dm_test")
 	if err1 != nil {
 		t.Error("Managing existing data dir failed: " + err1.Error())
@@ -102,6 +162,7 @@ func TestDeleteVersionsAt(t *testing.T) {
 			t.Error("Inserting element ", fmt.Sprint(i), " failed.")
 		}
 	}
+	dm.PersistChanges()
 	timestamp := time.Now().UnixNano()
 	dm.DeleteVersionsAt(timestamp)
 	for i := 0; i < 1000; i++ {
