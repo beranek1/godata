@@ -2,11 +2,8 @@ package godata
 
 import (
 	"os"
-	"strconv"
 	"time"
 )
-
-var timestampBase = 36
 
 type DataManager struct {
 	Path   string
@@ -100,22 +97,6 @@ func (dm DataManager) GetDataFromInterval(name string, start int64, interval int
 
 // Remove all versions equal or older than the provided timestamp
 func (dm DataManager) DeleteVersionsAt(timestamp int64) {
-	nodes, err := os.ReadDir(dm.Path)
-	if err == nil {
-		for _, node := range nodes {
-			if node.IsDir() {
-				versions, err := os.ReadDir(dm.Path + "/" + node.Name())
-				if err == nil {
-					for _, version := range versions {
-						t, err := strconv.ParseInt(version.Name(), timestampBase, 64)
-						if err == nil && t <= timestamp {
-							os.Remove(dm.Path + "/" + node.Name() + "/" + version.Name())
-						}
-					}
-				}
-			}
-		}
-	}
 	dm.tree.DeleteVersionsAt(timestamp)
 }
 
