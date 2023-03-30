@@ -17,9 +17,9 @@ type DataVersion interface {
 }
 
 type DataVersionLinkedSortedList struct {
-	Data       any                          `json:"data"`
-	Next       *DataVersionLinkedSortedList `json:"next"`
-	Timestamps []int64                      `json:"timestamps"`
+	Data       any                          `json:"d"`
+	Next       *DataVersionLinkedSortedList `json:"n"`
+	Timestamps []int64                      `json:"t"`
 }
 
 func CreateDataVersion(data any, timestamp int64) *DataVersionLinkedSortedList {
