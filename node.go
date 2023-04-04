@@ -1,13 +1,15 @@
 package godata
 
-import "os"
+import (
+	"os"
+)
 
 type DataNode interface {
 	InsertDataAt(string, any, int64) DataNode
 	GetData(string) any
 	GetDataAt(string, int64) any
-	GetDataRange(string, int64, int64) map[int64]any
-	GetDataRangeInterval(string, int64, int64, int64) map[int64]any
+	GetDataRange(string, int64, int64) *DataVersionLinkedSortedList
+	GetDataRangeInterval(string, int64, int64, int64) *DataVersionLinkedSortedList
 	DeleteVersionsAt(int64)
 }
 
@@ -132,9 +134,9 @@ func (dn *DataNodeRBT) GetDataAt(name string, timestamp int64) any {
 	}
 }
 
-func (dn *DataNodeRBT) GetDataRange(name string, start int64, end int64) map[int64]any {
+func (dn *DataNodeRBT) GetDataRange(name string, start int64, end int64) *DataVersionLinkedSortedList {
 	if dn.name == name {
-		return dn.version.GetDataRange(start, end)
+		return dn.version.Range(start, end)
 	} else if dn.name > name {
 		if dn.Left == nil {
 			return nil
@@ -148,9 +150,9 @@ func (dn *DataNodeRBT) GetDataRange(name string, start int64, end int64) map[int
 	}
 }
 
-func (dn *DataNodeRBT) GetDataRangeInterval(name string, start int64, end int64, interval int64) map[int64]any {
+func (dn *DataNodeRBT) GetDataRangeInterval(name string, start int64, end int64, interval int64) *DataVersionLinkedSortedList {
 	if dn.name == name {
-		return dn.version.GetDataRangeInterval(start, end, interval)
+		return dn.version.RangeInterval(start, end, interval)
 	} else if dn.name > name {
 		if dn.Left == nil {
 			return nil

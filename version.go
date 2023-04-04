@@ -9,11 +9,13 @@ type DataVersion interface {
 	InsertDataAt(any, int64) DataVersion
 	GetData() any
 	GetDataAt(int64) any
-	GetDataRange(int64, int64) map[int64]any
-	GetDataRangeInterval(int64, int64, int64) map[int64]any
+	Range(int64, int64) DataVersion
+	RangeInterval(int64, int64, int64) DataVersion
 	DeleteVersionsAt(int64) DataVersion
 	IsEmpty() bool
 	GetTimestamp() int64
+	Array() []DataVersionArrayEntry
+	Map() DataVersionMap
 }
 
 type DataVersionLinkedSortedList struct {
@@ -21,6 +23,13 @@ type DataVersionLinkedSortedList struct {
 	Next       *DataVersionLinkedSortedList `json:"n"`
 	Timestamps []int64                      `json:"t"`
 }
+
+type DataVersionArrayEntry struct {
+	Data      any   `json:"d"`
+	Timestamp int64 `json:"t"`
+}
+
+type DataVersionMap map[int64]any
 
 func CreateDataVersion(data any, timestamp int64) *DataVersionLinkedSortedList {
 	return &DataVersionLinkedSortedList{data, nil, []int64{timestamp}}
@@ -107,50 +116,60 @@ func (dv *DataVersionLinkedSortedList) GetDataAt(timestamp int64) any {
 	return dv.Next.GetDataAt(timestamp)
 }
 
-func (dv *DataVersionLinkedSortedList) GetDataRange(start int64, end int64) map[int64]any {
-	if dv == nil || start > end || dv.Timestamps[0] <= start {
+func (dv *DataVersionLinkedSortedList) Range(start int64, end int64) *DataVersionLinkedSortedList {
+	if dv == nil || start > end || dv.Timestamps[len(dv.Timestamps)-1] <= start {
 		return nil
 	} else if dv.Timestamps[0] <= end {
-		m := map[int64]any{}
-		m[dv.Timestamps[0]] = dv.Data
-		return dv.Next.getDataRangeI(start, end, m)
+		if dv.Timestamps[0] > start {
+			if dv.Timestamps[len(dv.Timestamps)-1] <= end {
+				return &DataVersionLinkedSortedList{dv.Data, dv.Next.Range(start, end), dv.Timestamps}
+			}
+			pos := -1
+			for i := 0; i < len(dv.Timestamps); i++ {
+				if dv.Timestamps[i] > end {
+					pos = i
+					break
+				}
+			}
+			new := make([]int64, 0)
+			new = append(new, dv.Timestamps[:pos]...)
+			return &DataVersionLinkedSortedList{dv.Data, dv.Next.Range(start, end), new}
+		} else if dv.Timestamps[len(dv.Timestamps)-1] <= end {
+			pos := -1
+			for i := 0; i < len(dv.Timestamps); i++ {
+				if dv.Timestamps[i] > start {
+					pos = i
+					break
+				}
+			}
+			new := make([]int64, 0)
+			new = append(new, dv.Timestamps[pos:]...)
+			return &DataVersionLinkedSortedList{dv.Data, dv.Next.Range(start, end), new}
+		} else {
+			spos := -1
+			for i := 0; i < len(dv.Timestamps); i++ {
+				if dv.Timestamps[i] > start {
+					spos = i
+					break
+				}
+			}
+			epos := -1
+			for i := 0; i < len(dv.Timestamps); i++ {
+				if dv.Timestamps[i] > end {
+					epos = i
+					break
+				}
+			}
+			new := make([]int64, 0)
+			new = append(new, dv.Timestamps[spos:epos]...)
+			return &DataVersionLinkedSortedList{dv.Data, dv.Next.Range(start, end), new}
+		}
 	}
-	return dv.Next.GetDataRange(start, end)
+	return dv.Next.Range(start, end)
 }
 
-func (dv *DataVersionLinkedSortedList) getDataRangeI(start int64, end int64, m map[int64]any) map[int64]any {
-	if dv == nil || start > end || dv.Timestamps[0] <= start {
-		return m
-	} else if dv.Timestamps[0] <= end {
-		m[dv.Timestamps[0]] = dv.Data
-		return dv.Next.getDataRangeI(start, end, m)
-	}
-	return m
-}
-
-func (dv *DataVersionLinkedSortedList) GetDataRangeInterval(start int64, end int64, interval int64) map[int64]any {
-	if dv == nil || start > end || interval <= 0 || dv.Timestamps[0] <= start {
-		return nil
-	} else if dv.Timestamps[0] > end {
-		return dv.Next.GetDataRangeInterval(start, end, interval)
-	} else if dv.Timestamps[0] <= end && dv.Timestamps[0] > (end-interval) {
-		m := map[int64]any{}
-		m[end] = dv.Data
-		return dv.Next.getDataRangeIntervalI(start, end-interval, interval, m)
-	}
-	return dv.GetDataRangeInterval(start, end-interval, interval)
-}
-
-func (dv *DataVersionLinkedSortedList) getDataRangeIntervalI(start int64, end int64, interval int64, m map[int64]any) map[int64]any {
-	if dv == nil || start > end || interval <= 0 || dv.Timestamps[0] <= start {
-		return m
-	} else if dv.Timestamps[0] > end {
-		return dv.Next.getDataRangeIntervalI(start, end, interval, m)
-	} else if dv.Timestamps[0] <= end && dv.Timestamps[0] > (end-interval) {
-		m[end] = dv.Data
-		return dv.Next.getDataRangeIntervalI(start, end-interval, interval, m)
-	}
-	return dv.getDataRangeIntervalI(start, end-interval, interval, m)
+func (dv *DataVersionLinkedSortedList) RangeInterval(start int64, end int64, interval int64) *DataVersionLinkedSortedList {
+	return dv.Range(start, end)
 }
 
 func (dv *DataVersionLinkedSortedList) DeleteVersionsAt(timestamp int64) *DataVersionLinkedSortedList {
@@ -192,4 +211,26 @@ func (dv *DataVersionLinkedSortedList) Export() ([]byte, error) {
 		return nil, err
 	}
 	return exp, nil
+}
+
+func (dv *DataVersionLinkedSortedList) Array() []DataVersionArrayEntry {
+	if dv == nil {
+		return []DataVersionArrayEntry{}
+	}
+	ary := make([]DataVersionArrayEntry, len(dv.Timestamps))
+	for i := 0; i < len(dv.Timestamps); i++ {
+		ary[i] = DataVersionArrayEntry{dv.Data, dv.Timestamps[i]}
+	}
+	return append(ary, dv.Next.Array()...)
+}
+
+func (dv *DataVersionLinkedSortedList) Map() DataVersionMap {
+	if dv == nil {
+		return DataVersionMap{}
+	}
+	m := dv.Next.Map()
+	for i := 0; i < len(dv.Timestamps); i++ {
+		m[dv.Timestamps[i]] = dv.Data
+	}
+	return m
 }

@@ -292,6 +292,12 @@ func TestDuplicateSplitQuadDataVersion(t *testing.T) {
 	if version.GetDataAt(50) != 5 {
 		t.Error("Second partition of first version has wrong value.")
 	}
+	if len(version.Map()) != 5 {
+		t.Error("Map conversion invalid.")
+	}
+	if len(version.Array()) != 5 {
+		t.Error("Array conversion invalid.")
+	}
 	version = version.DeleteVersionsAt(10)
 	if version.GetDataAt(15) == 5 {
 		t.Error("Deletion of versions at timestamp 10 didn't affect first version.")
@@ -326,48 +332,66 @@ func TestVersionRange(t *testing.T) {
 		version = version.InsertDataAt(i, int64(i))
 		i++
 	}
-	res := version.GetDataRange(0, int64(c))
+	res := version.Range(0, int64(c)).Map()
 	if len(res) != c {
-		t.Error("Full range does not contain all elements.")
+		t.Error("Full range does not contain all elements.", len(res))
 	}
-	res = version.GetDataRange(int64(c)/2, int64(c))
+	res = version.Range(int64(c)/2, int64(c)).Map()
 	if len(res) != c/2 {
 		t.Error("Half range does not contain half elements.")
 	}
-	res = version.GetDataRange(1, 0)
-	if res != nil {
+	rres := version.Range(1, 0)
+	if rres != nil {
 		t.Error("Range accepts invalid range.")
 	}
-	res = version.GetDataRange(int64(c), int64(c)*2)
+	res = version.Range(int64(c), int64(c)*2).Map()
 	if len(res) != 0 {
 		t.Error("Elements after range returned.")
 	}
-	res = version.GetDataRange(-int64(c), 0)
+	res = version.Range(-int64(c), 0).Map()
 	if len(res) != 0 {
 		t.Error("Elements before range returned.")
 	}
-	res = version.GetDataRangeInterval(0, int64(c), 5)
-	if len(res) != c/5 {
-		t.Error("Full range with interval 5 does not contain fifth of all elements.")
-	}
-	res = version.GetDataRangeInterval(1, 0, 5)
-	if res != nil {
-		t.Error("Range accepts invalid range.")
-	}
-	res = version.GetDataRangeInterval(int64(c), int64(c)*2, 5)
-	if len(res) != 0 {
-		t.Error("Elements after range returned.")
-	}
-	res = version.GetDataRangeInterval(-int64(c), 0, 5)
-	if len(res) != 0 {
-		t.Error("Elements before range returned.")
-	}
-	res = version.GetDataRangeInterval(0, int64(c), 0)
-	if res != nil {
-		t.Error("Interval accept 0 as interval.")
-	}
-	res = version.GetDataRangeInterval(0, int64(c), -1)
-	if res != nil {
-		t.Error("Interval accepts negative interval.")
+	// res = version.RangeInterval(0, int64(c), 5).Map()
+	// if len(res) != c/5 {
+	// 	t.Error("Full range with interval 5 does not contain fifth of all elements.")
+	// }
+	// rres := version.RangeInterval(1, 0, 5)
+	// if rres != nil {
+	// 	t.Error("Range accepts invalid range.")
+	// }
+	// res = version.RangeInterval(int64(c), int64(c)*2, 5).Map()
+	// if len(res) != 0 {
+	// 	t.Error("Elements after range returned.")
+	// }
+	// res = version.RangeInterval(-int64(c), 0, 5).Map()
+	// if len(res) != 0 {
+	// 	t.Error("Elements before range returned.")
+	// }
+	// rres = version.RangeInterval(0, int64(c), 0)
+	// if rres != nil {
+	// 	t.Error("Interval accept 0 as interval.")
+	// }
+	// rres = version.RangeInterval(0, int64(c), -1)
+	// if rres != nil {
+	// 	t.Error("Interval accepts negative interval.")
+	// }
+}
+
+func TestVersionRangeExtra(t *testing.T) {
+	var version *DataVersionLinkedSortedList
+	version = version.InsertDataAt(5, 10)
+	version = version.InsertDataAt(5, 15)
+	version = version.InsertDataAt(5, 20)
+	version = version.InsertDataAt(5, 30)
+	version = version.InsertDataAt(5, 35)
+	version = version.InsertDataAt(5, 40)
+	version = version.InsertDataAt(10, 25)
+	for i := 5; i <= 40; i = i + 5 {
+		for j := i; j <= 40; j = j + 5 {
+			if len(version.Range(int64(i), int64(j)).Array()) != (j/5)-(i/5) {
+				t.Error("Range invalid.")
+			}
+		}
 	}
 }

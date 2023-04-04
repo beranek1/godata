@@ -12,6 +12,10 @@ import (
 func TestInterface(t *testing.T) {
 	var _ godatainterface.DataStore = DataStore{}
 	var _ godatainterface.DataStore = (*DataStore)(nil)
+	var _ godatainterface.DataStoreVersioned = DataStore{}
+	var _ godatainterface.DataStoreVersioned = (*DataStore)(nil)
+	var _ godatainterface.DataStoreVersionedRange = DataStore{}
+	var _ godatainterface.DataStoreVersionedRange = (*DataStore)(nil)
 }
 
 func TestCreateEmptyDir(t *testing.T) {

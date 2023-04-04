@@ -6,8 +6,8 @@ type DataTree interface {
 	InsertDataAt(string, any, int64)
 	GetData(string) any
 	GetDataAt(string, int64) any
-	GetDataRange(string, int64, int64) map[int64]any
-	GetDataRangeInterval(string, int64, int64, int64) map[int64]any
+	GetDataRange(string, int64, int64) *DataVersionLinkedSortedList
+	GetDataRangeInterval(string, int64, int64, int64) *DataVersionLinkedSortedList
 	DeleteVersionsAt(int64)
 }
 
@@ -51,14 +51,14 @@ func (dt *DataTreeRBT) GetDataAt(name string, timestamp int64) any {
 	return dt.root.GetDataAt(name, timestamp)
 }
 
-func (dt *DataTreeRBT) GetDataRange(name string, start int64, end int64) map[int64]any {
+func (dt *DataTreeRBT) GetDataRange(name string, start int64, end int64) *DataVersionLinkedSortedList {
 	if dt.root == nil {
 		return nil
 	}
 	return dt.root.GetDataRange(name, start, end)
 }
 
-func (dt *DataTreeRBT) GetDataRangeInterval(name string, start int64, end int64, interval int64) map[int64]any {
+func (dt *DataTreeRBT) GetDataRangeInterval(name string, start int64, end int64, interval int64) *DataVersionLinkedSortedList {
 	if dt.root == nil {
 		return nil
 	}

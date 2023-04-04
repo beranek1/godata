@@ -63,6 +63,22 @@ func (ds DataStore) FromInterval(key string, start int64, interval int64) (map[i
 	return ds.manager.GetDataFromInterval(key, start, interval), nil
 }
 
+func (ds DataStore) RangeArray(key string, start int64, end int64) ([]DataVersionArrayEntry, error) {
+	return ds.manager.GetDataRangeArray(key, start, end), nil
+}
+
+func (ds DataStore) FromArray(key string, start int64) ([]DataVersionArrayEntry, error) {
+	return ds.manager.GetDataFromArray(key, start), nil
+}
+
+func (ds DataStore) RangeIntervalArray(key string, start int64, end int64, interval int64) ([]DataVersionArrayEntry, error) {
+	return ds.manager.GetDataRangeIntervalArray(key, start, end, interval), nil
+}
+
+func (ds DataStore) FromIntervalArray(key string, start int64, interval int64) ([]DataVersionArrayEntry, error) {
+	return ds.manager.GetDataFromIntervalArray(key, start, interval), nil
+}
+
 func (ds DataStore) DeleteVersionsAt(timestamp int64) {
 	ds.manager.DeleteVersionsAt(timestamp)
 }
