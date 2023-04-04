@@ -2,7 +2,17 @@ package godata
 
 import (
 	"errors"
+
+	"github.com/beranek1/godatainterface"
 )
+
+type DataStoreInterface interface {
+	godatainterface.DataStoreVersionedRangeFromInterval
+	RangeArray(key string, start int64, end int64) ([]DataVersionArrayEntry, error)
+	FromArray(key string, start int64) ([]DataVersionArrayEntry, error)
+	RangeIntervalArray(key string, start int64, end int64, interval int64) ([]DataVersionArrayEntry, error)
+	FromIntervalArray(key string, start int64, interval int64) ([]DataVersionArrayEntry, error)
+}
 
 // Wrapper for DataManager to support godatainterface definitions
 type DataStore struct {
