@@ -3,6 +3,8 @@ package godata
 import (
 	"os"
 	"time"
+
+	"github.com/beranek1/godatainterface"
 )
 
 type DataManager struct {
@@ -74,47 +76,25 @@ func (dm DataManager) GetDataAt(name string, timestamp int64) any {
 }
 
 // Looks for versions in given timestamp range with given key. Returns map of values or nil if unsuccessful.
-func (dm DataManager) GetDataRange(name string, start int64, end int64) map[int64]any {
-	return dm.tree.GetDataRange(name, start, end).Map()
+func (dm DataManager) GetDataRange(name string, start int64, end int64) godatainterface.DataVersionLinked {
+	return dm.tree.GetDataRange(name, start, end)
 }
 
 // Looks for versions starting at given timestamp. Returns map of values or nil if unsuccessful.
-func (dm DataManager) GetDataFrom(name string, start int64) map[int64]any {
+func (dm DataManager) GetDataFrom(name string, start int64) godatainterface.DataVersionLinked {
 	timestamp := time.Now().UnixNano()
-	return dm.tree.GetDataRange(name, start, timestamp).Map()
+	return dm.tree.GetDataRange(name, start, timestamp)
 }
 
 // Looks for versions in interval within given timestamp range with given key. Returns map of values or nil if unsuccessful.
-func (dm DataManager) GetDataRangeInterval(name string, start int64, end int64, interval int64) map[int64]any {
-	return dm.tree.GetDataRangeInterval(name, start, end, interval).Map()
+func (dm DataManager) GetDataRangeInterval(name string, start int64, end int64, interval int64) godatainterface.DataVersionLinked {
+	return dm.tree.GetDataRangeInterval(name, start, end, interval)
 }
 
 // Looks for versions in interval starting at given timestamp. Returns map of values or nil if unsuccessful.
-func (dm DataManager) GetDataFromInterval(name string, start int64, interval int64) map[int64]any {
+func (dm DataManager) GetDataFromInterval(name string, start int64, interval int64) godatainterface.DataVersionLinked {
 	timestamp := time.Now().UnixNano()
-	return dm.tree.GetDataRangeInterval(name, start, timestamp, interval).Map()
-}
-
-// Looks for versions in given timestamp range with given key. Returns array of values or nil if unsuccessful.
-func (dm DataManager) GetDataRangeArray(name string, start int64, end int64) []DataVersionArrayEntry {
-	return dm.tree.GetDataRange(name, start, end).Array()
-}
-
-// Looks for versions starting at given timestamp. Returns array of values or nil if unsuccessful.
-func (dm DataManager) GetDataFromArray(name string, start int64) []DataVersionArrayEntry {
-	timestamp := time.Now().UnixNano()
-	return dm.tree.GetDataRange(name, start, timestamp).Array()
-}
-
-// Looks for versions in interval within given timestamp range with given key. Returns array of values or nil if unsuccessful.
-func (dm DataManager) GetDataRangeIntervalArray(name string, start int64, end int64, interval int64) []DataVersionArrayEntry {
-	return dm.tree.GetDataRangeInterval(name, start, end, interval).Array()
-}
-
-// Looks for versions in interval starting at given timestamp. Returns array of values or nil if unsuccessful.
-func (dm DataManager) GetDataFromIntervalArray(name string, start int64, interval int64) []DataVersionArrayEntry {
-	timestamp := time.Now().UnixNano()
-	return dm.tree.GetDataRangeInterval(name, start, timestamp, interval).Array()
+	return dm.tree.GetDataRangeInterval(name, start, timestamp, interval)
 }
 
 // Remove all versions equal or older than the provided timestamp

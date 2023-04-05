@@ -3,9 +3,12 @@ package godata
 import (
 	"encoding/json"
 	"reflect"
+
+	"github.com/beranek1/godatainterface"
 )
 
 type DataVersion interface {
+	godatainterface.DataVersionLinked
 	InsertDataAt(any, int64) DataVersion
 	GetData() any
 	GetDataAt(int64) any
@@ -14,19 +17,12 @@ type DataVersion interface {
 	DeleteVersionsAt(int64) DataVersion
 	IsEmpty() bool
 	GetTimestamp() int64
-	Array() []DataVersionArrayEntry
-	Map() DataVersionMap
 }
 
 type DataVersionLinkedSortedList struct {
 	Data       any                          `json:"d"`
 	Next       *DataVersionLinkedSortedList `json:"n"`
 	Timestamps []int64                      `json:"t"`
-}
-
-type DataVersionArrayEntry struct {
-	Data      any   `json:"d"`
-	Timestamp int64 `json:"t"`
 }
 
 type DataVersionMap map[int64]any
@@ -213,20 +209,20 @@ func (dv *DataVersionLinkedSortedList) Export() ([]byte, error) {
 	return exp, nil
 }
 
-func (dv *DataVersionLinkedSortedList) Array() []DataVersionArrayEntry {
+func (dv *DataVersionLinkedSortedList) Array() godatainterface.DataVersionLinkedArray {
 	if dv == nil {
-		return []DataVersionArrayEntry{}
+		return godatainterface.DataVersionLinkedArray{}
 	}
-	ary := make([]DataVersionArrayEntry, len(dv.Timestamps))
+	ary := make(godatainterface.DataVersionLinkedArray, len(dv.Timestamps))
 	for i := 0; i < len(dv.Timestamps); i++ {
-		ary[i] = DataVersionArrayEntry{dv.Data, dv.Timestamps[i]}
+		ary[i] = godatainterface.DataVersionEntry{Data: dv.Data, Timestamp: dv.Timestamps[i]}
 	}
 	return append(ary, dv.Next.Array()...)
 }
 
-func (dv *DataVersionLinkedSortedList) Map() DataVersionMap {
+func (dv *DataVersionLinkedSortedList) Map() godatainterface.DataVersionLinkedMap {
 	if dv == nil {
-		return DataVersionMap{}
+		return godatainterface.DataVersionLinkedMap{}
 	}
 	m := dv.Next.Map()
 	for i := 0; i < len(dv.Timestamps); i++ {

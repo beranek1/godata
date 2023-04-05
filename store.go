@@ -6,14 +6,6 @@ import (
 	"github.com/beranek1/godatainterface"
 )
 
-type DataStoreInterface interface {
-	godatainterface.DataStoreVersionedRangeFromInterval
-	RangeArray(key string, start int64, end int64) ([]DataVersionArrayEntry, error)
-	FromArray(key string, start int64) ([]DataVersionArrayEntry, error)
-	RangeIntervalArray(key string, start int64, end int64, interval int64) ([]DataVersionArrayEntry, error)
-	FromIntervalArray(key string, start int64, interval int64) ([]DataVersionArrayEntry, error)
-}
-
 // Wrapper for DataManager to support godatainterface definitions
 type DataStore struct {
 	manager *DataManager
@@ -57,36 +49,20 @@ func (ds DataStore) GetAt(key string, timestamp int64) (any, error) {
 	return value, nil
 }
 
-func (ds DataStore) Range(key string, start int64, end int64) (map[int64]any, error) {
+func (ds DataStore) Range(key string, start int64, end int64) (godatainterface.DataVersionLinked, error) {
 	return ds.manager.GetDataRange(key, start, end), nil
 }
 
-func (ds DataStore) From(key string, start int64) (map[int64]any, error) {
+func (ds DataStore) From(key string, start int64) (godatainterface.DataVersionLinked, error) {
 	return ds.manager.GetDataFrom(key, start), nil
 }
 
-func (ds DataStore) RangeInterval(key string, start int64, end int64, interval int64) (map[int64]any, error) {
+func (ds DataStore) RangeInterval(key string, start int64, end int64, interval int64) (godatainterface.DataVersionLinked, error) {
 	return ds.manager.GetDataRangeInterval(key, start, end, interval), nil
 }
 
-func (ds DataStore) FromInterval(key string, start int64, interval int64) (map[int64]any, error) {
+func (ds DataStore) FromInterval(key string, start int64, interval int64) (godatainterface.DataVersionLinked, error) {
 	return ds.manager.GetDataFromInterval(key, start, interval), nil
-}
-
-func (ds DataStore) RangeArray(key string, start int64, end int64) ([]DataVersionArrayEntry, error) {
-	return ds.manager.GetDataRangeArray(key, start, end), nil
-}
-
-func (ds DataStore) FromArray(key string, start int64) ([]DataVersionArrayEntry, error) {
-	return ds.manager.GetDataFromArray(key, start), nil
-}
-
-func (ds DataStore) RangeIntervalArray(key string, start int64, end int64, interval int64) ([]DataVersionArrayEntry, error) {
-	return ds.manager.GetDataRangeIntervalArray(key, start, end, interval), nil
-}
-
-func (ds DataStore) FromIntervalArray(key string, start int64, interval int64) ([]DataVersionArrayEntry, error) {
-	return ds.manager.GetDataFromIntervalArray(key, start, interval), nil
 }
 
 func (ds DataStore) DeleteVersionsAt(timestamp int64) {
