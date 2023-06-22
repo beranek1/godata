@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -205,24 +206,19 @@ func (dn *DataNodeRBT) PersistChanges(dir string) error {
 	if dn.version != nil {
 		exp, err := dn.version.Export()
 		if err != nil {
-			return err
-		}
-		err = os.WriteFile(dir+"/"+dn.name, exp, 0664)
-		if err != nil {
-			return err
+			fmt.Fprintf(os.Stderr, "An error occurred while converting node: %v\n", err)
+		} else {
+			err = os.WriteFile(dir+"/"+dn.name, exp, 0664)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "An error occurred while persisting node: %v\n", err)
+			}
 		}
 	}
 	if dn.Left != nil {
-		err := dn.Left.PersistChanges(dir)
-		if err != nil {
-			return err
-		}
+		dn.Left.PersistChanges(dir)
 	}
 	if dn.Right != nil {
-		err := dn.Right.PersistChanges(dir)
-		if err != nil {
-			return err
-		}
+		dn.Right.PersistChanges(dir)
 	}
 	return nil
 }
