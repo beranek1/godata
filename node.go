@@ -206,11 +206,11 @@ func (dn *DataNodeRBT) PersistChanges(dir string) error {
 	if dn.version != nil {
 		exp, err := dn.version.Export()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "An error occurred while converting node: %v\n", err)
+			fmt.Fprintf(os.Stderr, "An error occurred while converting node '%v': %v\n", dn.name, err)
 		} else {
 			err = os.WriteFile(dir+"/"+dn.name, exp, 0664)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "An error occurred while persisting node: %v\n", err)
+				fmt.Fprintf(os.Stderr, "An error occurred while persisting node '%v': %v\n", dn.name, err)
 			}
 		}
 	}
